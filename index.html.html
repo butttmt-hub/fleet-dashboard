@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Maintenance Dashboard | TMT STEEL</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#0d1117; --surface:#161b22; --surface2:#1c2430;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#e6edf3; --text-muted:#8b949e; --text-dim:#484f58;
+  --blue:#378ADD; --blue-dim:rgba(55,138,221,0.15);
+  --green:#1D9E75; --green-dim:rgba(29,158,117,0.15);
+  --amber:#e39c30; --amber-dim:rgba(227,156,48,0.15);
+  --red:#E24B4A; --red-dim:rgba(226,75,74,0.15);
+  --purple:#a78bfa; --purple-dim:rgba(167,139,250,0.15);
+  --teal:#22d3ee;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;font-size:14px;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);}
+.logo-badge{display:inline-flex;align-items:center;gap:8px;background:var(--blue-dim);border:1px solid rgba(55,138,221,0.3);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--blue);width:100%;}
+.logo-sub{font-size:10px;font-weight:400;color:var(--text-muted);display:block;margin-top:1px;}
+.nav-section{padding:16px 12px 8px;}
+.nav-label{font-size:10px;font-weight:500;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;padding:0 8px;margin-bottom:6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text-muted);transition:all 0.15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover{background:var(--border);color:var(--text);}
+.nav-item.active{background:var(--blue-dim);color:var(--blue);font-weight:500;}
+.nav-icon{width:16px;font-size:15px;text-align:center;flex-shrink:0;}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-dim);}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;}
+
+/* MAIN */
+.main{margin-left:220px;padding:24px;min-height:100vh;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.page-title{font-size:20px;font-weight:600;color:var(--text);}
+.page-sub{font-size:13px;color:var(--text-muted);margin-top:2px;}
+.filters{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--border);padding:6px 10px;border-radius:8px;}
+.filter-lbl{font-size:11px;color:var(--text-dim);white-space:nowrap;}
+select{background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:4px 10px;border-radius:5px;font-size:12px;font-family:'IBM Plex Sans Thai',sans-serif;cursor:pointer;}
+select:focus{outline:none;border-color:var(--blue);}
+.filter-divider{width:1px;height:20px;background:var(--border2);margin:0 4px;}
+
+/* SECTION */
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.section-tag{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--blue);background:var(--blue-dim);padding:3px 8px;border-radius:4px;}
+.section-title{font-size:15px;font-weight:500;color:var(--text);}
+.section-line{flex:1;height:1px;background:var(--border);}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.kpi-card:hover{border-color:var(--border2);}
+.kpi-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0;}
+.kpi-label{font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.kpi-icon{font-size:14px;}
+.kpi-value{font-size:28px;font-weight:600;color:var(--text);line-height:1;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;}
+.kpi-value sup{font-size:14px;font-weight:400;color:var(--text-muted);margin-right:2px;}
+.kpi-meta{font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:6px;}
+.kpi-badge{font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;}
+.badge-red{background:var(--red-dim);color:var(--red);}
+.badge-green{background:var(--green-dim);color:var(--green);}
+.badge-amber{background:var(--amber-dim);color:var(--amber);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);}
+
+/* CHARTS */
+.charts-row{display:grid;gap:14px;margin-bottom:20px;}
+.c-2{grid-template-columns:1fr 1fr;}
+.c-3{grid-template-columns:2fr 1fr;}
+.c-full{grid-template-columns:1fr;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:500;color:var(--text);}
+.card-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.legend-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);}
+.legend-box{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* INSIGHT */
+.insight-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.insight-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;}
+.insight-icon{font-size:18px;margin-top:1px;flex-shrink:0;}
+.insight-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.insight-text{font-size:11px;color:var(--text-muted);line-height:1.5;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{font-size:10px;font-weight:500;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text-muted);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--border);}
+.td-primary{color:var(--text);font-weight:500;font-family:'IBM Plex Mono',monospace;font-size:11px;}
+.risk-bar-wrap{width:80px;height:4px;background:var(--surface2);border-radius:2px;display:inline-block;vertical-align:middle;margin-right:6px;}
+.risk-bar-fill{height:100%;border-radius:2px;}
+
+/* PRIORITY BAR */
+.priority-section{margin-bottom:20px;}
+.priority-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.priority-item:last-child{border-bottom:none;}
+.pi-label{font-size:13px;color:var(--text);flex:0 0 220px;}
+.pi-bar-bg{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.pi-bar{height:100%;border-radius:3px;}
+.pi-val{font-size:12px;color:var(--text-muted);min-width:90px;text-align:right;font-family:'IBM Plex Mono',monospace;}
+.pi-count{font-size:11px;color:var(--text-dim);min-width:55px;text-align:right;}
+
+/* ALERT */
+.alert-box{background:var(--amber-dim);border:1px solid rgba(227,156,48,0.3);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start;}
+.alert-icon{font-size:20px;flex-shrink:0;}
+.alert-title{font-size:13px;font-weight:500;color:var(--amber);margin-bottom:4px;}
+.alert-text{font-size:12px;color:var(--text-muted);line-height:1.6;}
+
+/* PAGES */
+.page-section{display:none;}
+.page-section.active{display:block;}
+
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.text-right{text-align:right;}
+.text-center{text-align:center;}
+.mb-20{margin-bottom:20px;}
+.mb-14{margin-bottom:14px;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">
+      <span style="font-size:18px">🚛</span>
+      <span>Fleet MMS<span class="logo-sub">TMT STEEL — Maintenance</span></span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Dashboard</div>
+    <button class="nav-item active" onclick="showPage('overview',this)"><span class="nav-icon">📊</span>ภาพรวม Executive</button>
+    <button class="nav-item" onclick="showPage('maintenance',this)"><span class="nav-icon">🔧</span>การซ่อมบำรุง</button>
+    <button class="nav-item" onclick="showPage('cost',this)"><span class="nav-icon">💰</span>วิเคราะห์ต้นทุน</button>
+    <button class="nav-item" onclick="showPage('fleet',this)"><span class="nav-icon">🚘</span>รายรถ</button>
+    <button class="nav-item" onclick="showPage('insight',this)"><span class="nav-icon">💡</span>Insight & แนะนำ</button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">ข้อมูล</div>
+    <button class="nav-item" onclick="alert('ค่าซ่อม.xlsx\n1,669 รายการ | 43 คัน\nม.ค. 2024 – พ.ค. 2026')"><span class="nav-icon">📁</span>ค่าซ่อม.xlsx</button>
+  </div>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:6px;"><div class="dot-live"></div><span>อัปเดต: พ.ค. 2026</span></div>
+    <div style="margin-top:6px;color:var(--text-dim)">1,669 รายการ · 43 คัน</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="pageTitle">Executive Overview</div>
+      <div class="page-sub" id="pageSub">ภาพรวมการซ่อมบำรุงยานพาหนะ มกราคม 2024 – พฤษภาคม 2026</div>
+    </div>
+    <div class="filters">
+      <span class="filter-lbl">ปี</span>
+      <select id="fYear" onchange="onYearChange()">
+        <option value="all">ทุกปี</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+      <div class="filter-divider"></div>
+      <span class="filter-lbl">เดือน</span>
+      <select id="fMonth" onchange="rebuildActive()"><option value="all">ทุกเดือน</option></select>
+      <div class="filter-divider"></div>
+      <span class="filter-lbl">หมวด</span>
+      <select id="fGroup" onchange="rebuildActive()">
+        <option value="all">ทุกหมวด</option>
+        <option value="ยาง">ยาง</option>
+        <option value="เครื่องยนต์">เครื่องยนต์</option>
+        <option value="อื่นๆ">อื่นๆ</option>
+        <option value="ช่วงล่าง">ช่วงล่าง</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: OVERVIEW ═══ -->
+  <div id="page-overview" class="page-section active">
+    <div class="section-header"><span class="section-tag">KPI</span><span class="section-title">ตัวชี้วัดหลัก</span><div class="section-line"></div></div>
+    <div class="kpi-grid mb-20" id="kpiGrid"></div>
+    <div class="section-header"><span class="section-tag">TREND</span><span class="section-title">แนวโน้มค่าซ่อม & สัดส่วนหมวดหมู่</span><div class="section-line"></div></div>
+    <div class="charts-row c-3 mb-20">
+      <div class="chart-card">
+        <div class="card-head">
+          <div><div class="card-title">แนวโน้มค่าซ่อมรายเดือน</div><div class="card-sub">มูลค่ารวม (บาท) แต่ละเดือน พร้อมค่าเฉลี่ย</div></div>
+          <div id="trendAvgBadge" class="kpi-badge badge-blue"></div>
+        </div>
+        <div style="height:220px"><canvas id="trendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">สัดส่วนตามหมวด</div><div class="card-sub">% มูลค่าค่าซ่อม</div></div></div>
+        <div class="legend-row" id="donutLegend"></div>
+        <div style="height:170px"><canvas id="donutChart"></canvas></div>
+      </div>
+    </div>
+    <div class="section-header"><span class="section-tag">ANALYSIS</span><span class="section-title">PM vs Run-to-Failed & รายละเอียดรายเดือน</span><div class="section-line"></div></div>
+    <div class="charts-row c-2 mb-20">
+      <div class="chart-card">
+        <div class="card-head">
+          <div><div class="card-title">ลักษณะการซ่อม (PM vs RTF)</div><div class="card-sub">เปรียบเทียบมูลค่าและจำนวนรายการ</div></div>
+          <span class="kpi-badge badge-amber">⚠ RTF 37% (หลัง reclassify)</span>
+        </div>
+        <div class="priority-section" id="prioritySection"></div>
+        <div style="height:130px"><canvas id="pmChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">ค่าซ่อมรายเดือนแยกตามหมวด</div><div class="card-sub">Stacked Bar — ยาง · เครื่องยนต์ · อื่นๆ · ช่วงล่าง</div></div></div>
+        <div class="legend-row" id="stackLegend"></div>
+        <div style="height:210px"><canvas id="stackChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: MAINTENANCE ═══ -->
+  <div id="page-maintenance" class="page-section">
+    <div class="section-header"><span class="section-tag">PM KPI</span><span class="section-title">ประสิทธิภาพการบำรุงรักษา</span><div class="section-line"></div></div>
+    <div class="alert-box mb-20">
+      <span class="alert-icon">⚠️</span>
+      <div>
+        <div class="alert-title">หลัง Reclassify: เปลี่ยนยาง = PM · ปะยาง = RTF — ภาพรวมเปลี่ยนอย่างมีนัยสำคัญ</div>
+        <div class="alert-text">หลังปรับนิยาม: RTF อยู่ที่ <strong style="color:var(--amber)">37% ของจำนวนรายการ</strong> และ <strong style="color:var(--amber)">37% ของมูลค่า</strong> ใกล้เคียง Benchmark อุตสาหกรรม (ควรไม่เกิน 30%) · PM เพิ่มเป็น <strong style="color:var(--green)">63%</strong> · ค่ายางที่เหลือใน RTF (ปะยาง) มีมูลค่าต่ำมาก ≈ ฿400–700/ครั้ง ไม่ใช่ตัวดึงต้นทุน</div>
+      </div>
+    </div>
+    <div class="charts-row c-2 mb-20">
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">ประเภทงานซ่อมแยกปี (จำนวนรายการ)</div><div class="card-sub">PM vs RTF vs Re-work</div></div></div>
+        <div style="height:240px"><canvas id="pmYearChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">ค่าซ่อมรายปีเปรียบเทียบ</div><div class="card-sub">2024 · 2025 · 2026 (ม.ค.–พ.ค.)</div></div></div>
+        <div style="height:240px"><canvas id="yearCompChart"></canvas></div>
+      </div>
+    </div>
+    <div class="section-header"><span class="section-tag" style="background:var(--red-dim);color:var(--red)">RTF COMPARE</span><span class="section-title">เปรียบเทียบ Run-to-Failed ระหว่างปี</span><div class="section-line"></div></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text-muted)">เปรียบเทียบ:</span>
+      <select id="rtfBaseYear" onchange="buildRtfCompare()"><option value="2024">ปี 2024 (ฐาน)</option><option value="2025">ปี 2025 (ฐาน)</option></select>
+      <span style="font-size:13px;color:var(--text-dim)">→</span>
+      <select id="rtfCmpYear" onchange="buildRtfCompare()"><option value="2025">เทียบกับปี 2025</option><option value="2026">เทียบกับปี 2026 (ม.ค.–พ.ค.)</option></select>
+      <span style="font-size:11px;color:var(--text-dim)">* 2026 ใช้เฉพาะ ม.ค.–พ.ค. (5 เดือน)</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="rtfDiffCards"></div>
+    <div class="charts-row c-2 mb-20">
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title" id="rtfBarTitle">RTF รายเดือน — เปรียบเทียบปีต่อปี</div><div class="card-sub">จำนวนรายการ RTF แต่ละเดือน</div></div></div>
+        <div style="height:230px"><canvas id="rtfMonthlyChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title" id="rtfCostBarTitle">มูลค่า RTF รายเดือน — เปรียบเทียบปีต่อปี</div><div class="card-sub">ค่าใช้จ่าย RTF (บาท)</div></div></div>
+        <div style="height:230px"><canvas id="rtfCostMonthlyChart"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-row c-2 mb-20">
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">RTF แยกตามหมวด — เปรียบเทียบ</div><div class="card-sub">มูลค่า RTF แต่ละหมวด (บาท)</div></div></div>
+        <div class="legend-row" id="rtfGroupLegend"></div>
+        <div style="height:210px"><canvas id="rtfGroupChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">Top 10 รถที่ RTF ซ้ำบ่อยสุด</div><div class="card-sub">จำนวนครั้งที่เสียแล้วซ่อมสะสม</div></div></div>
+        <div style="height:240px"><canvas id="rtfRepeatChart"></canvas></div>
+      </div>
+    </div>
+    <div id="rtfInsightBox" style="border-radius:10px;padding:14px 18px;margin-bottom:20px;border:1px solid rgba(226,75,74,0.25);background:rgba(226,75,74,0.06);display:flex;gap:12px;align-items:flex-start">
+      <span style="font-size:22px;flex-shrink:0">📉</span>
+      <div id="rtfInsightText" style="font-size:13px;color:var(--text-muted);line-height:1.8"></div>
+    </div>
+    <div class="section-header"><span class="section-tag">BREAKDOWN</span><span class="section-title">ค่าซ่อมแยกตามประเภทงาน</span><div class="section-line"></div></div>
+    <div class="chart-card mb-20">
+      <div class="card-head"><div><div class="card-title">ค่าซ่อมแยกตามประเภทงาน (บาท) — Top 9</div><div class="card-sub">เรียงตามมูลค่ารวมสูงสุด</div></div></div>
+      <div style="height:260px"><canvas id="subCatChart"></canvas></div>
+    </div>
+
+    <!-- ═══ RTF REPEAT COMPARISON ═══ -->
+    <div class="section-header">
+      <span class="section-tag" style="background:rgba(167,139,250,0.15);color:#a78bfa">RTF REPEAT</span>
+      <span class="section-title">เปรียบเทียบการซ่อมซ้ำ RTF รายคัน — % เปลี่ยนแปลง</span>
+      <div class="section-line"></div>
+    </div>
+
+    <!-- Year selector -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;">
+      <span style="font-size:12px;color:var(--text-muted);font-weight:500;">📅 เลือกช่วงเปรียบเทียบ:</span>
+      <select id="repeatBaseYear" onchange="buildRepeatCompare()" style="padding:5px 12px;">
+        <option value="2024">ปี 2024 (ฐาน)</option>
+        <option value="2025">ปี 2025 (ฐาน)</option>
+      </select>
+      <span style="font-size:16px;color:var(--text-dim)">→</span>
+      <select id="repeatCmpYear" onchange="buildRepeatCompare()" style="padding:5px 12px;">
+        <option value="2025">เทียบกับปี 2025</option>
+        <option value="2026">เทียบกับปี 2026 (ม.ค.–พ.ค.)</option>
+      </select>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button onclick="setRepeatView('count')" id="btnCount" style="padding:5px 12px;border-radius:5px;border:1px solid var(--blue);background:var(--blue-dim);color:var(--blue);cursor:pointer;font-size:12px;font-family:'IBM Plex Sans Thai',sans-serif;">จำนวนครั้ง</button>
+        <button onclick="setRepeatView('cost')" id="btnCost" style="padding:5px 12px;border-radius:5px;border:1px solid var(--border2);background:none;color:var(--text-muted);cursor:pointer;font-size:12px;font-family:'IBM Plex Sans Thai',sans-serif;">มูลค่า (฿)</button>
+      </div>
+    </div>
+
+    <!-- KPI diff cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;" id="repeatDiffCards"></div>
+
+    <!-- Chart + Table -->
+    <div class="charts-row c-2 mb-20">
+      <div class="chart-card">
+        <div class="card-head">
+          <div><div class="card-title" id="repeatChartTitle">RTF ซ้ำรายคัน — เปรียบเทียบปีต่อปี</div><div class="card-sub">Top 15 รถที่มี RTF สะสมสูงสุด</div></div>
+        </div>
+        <div style="height:340px"><canvas id="repeatBarChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-head">
+          <div><div class="card-title">% เปลี่ยนแปลง RTF ซ้ำ — รายคัน</div><div class="card-sub">สีเขียว = ลดลง (ดี) · สีแดง = เพิ่มขึ้น (เสี่ยง)</div></div>
+        </div>
+        <div style="height:340px"><canvas id="repeatPctChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Monthly repeat RTF chart -->
+    <div class="chart-card mb-20">
+      <div class="card-head">
+        <div>
+          <div class="card-title" id="repeatMonthlyTitle">RTF ซ้ำรายเดือน — เปรียบเทียบปีต่อปี</div>
+          <div class="card-sub">จำนวนครั้งซ่อมซ้ำ (รถที่เคย RTF แล้วกลับมาซ่อมซ้ำในปีเดียวกัน) · สีเขียว = เดือนที่ดีขึ้น</div>
+        </div>
+        <div id="repeatMonthlyBadge" class="kpi-badge"></div>
+      </div>
+      <div style="height:260px"><canvas id="repeatMonthlyChart"></canvas></div>
+      <!-- % change bar -->
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.04em;">% เปลี่ยนแปลงรายเดือน (เขียว = ลดลง ✅ · แดง = เพิ่มขึ้น ⚠)</div>
+        <div style="height:80px"><canvas id="repeatMonthlyPctChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Detail table -->
+    <div class="chart-card mb-20">
+      <div class="card-head">
+        <div><div class="card-title" id="repeatTableTitle">ตารางรายละเอียด RTF ซ้ำ — รายคัน</div><div class="card-sub">เรียงตาม % เปลี่ยนแปลงสูงสุด (เพิ่มขึ้น = เสี่ยง)</div></div>
+        <div id="repeatSummaryBadge" class="kpi-badge"></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="repeatTable">
+          <thead>
+            <tr>
+              <th>ทะเบียน</th>
+              <th id="thBase" class="text-right">ปีฐาน</th>
+              <th id="thCmp" class="text-right">ปีเปรียบเทียบ</th>
+              <th class="text-right">% เปลี่ยนแปลง</th>
+              <th class="text-right">แนวโน้ม</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="repeatTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: COST ═══ -->
+  <div id="page-cost" class="page-section">
+    <div class="section-header"><span class="section-tag">COST KPI</span><span class="section-title">วิเคราะห์ต้นทุนเชิงลึก</span><div class="section-line"></div></div>
+    <div class="kpi-grid mb-20">
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--blue)"></div><div class="kpi-label"><span class="kpi-icon">💰</span>ต้นทุนรวม</div><div class="kpi-value"><sup>฿</sup>18.0M</div><div class="kpi-meta"><span class="kpi-badge badge-blue">2024–2026</span></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--amber)"></div><div class="kpi-label"><span class="kpi-icon">🚛</span>ต้นทุน/คัน/ปี</div><div class="kpi-value"><sup>฿</sup>209K</div><div class="kpi-meta"><span class="kpi-badge badge-amber">43 คัน</span></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div><div class="kpi-label"><span class="kpi-icon">📋</span>ต้นทุน/รายการ</div><div class="kpi-value"><sup>฿</sup>10,786</div><div class="kpi-meta"><span class="kpi-badge badge-green">1,669 รายการ</span></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--red)"></div><div class="kpi-label"><span class="kpi-icon">⚡</span>ต้นทุน RTF เพิ่มเติม</div><div class="kpi-value" style="font-size:22px"><sup>฿</sup>~4.8M</div><div class="kpi-meta"><span class="kpi-badge badge-red">สูงกว่า PM ประมาณ 35%</span></div></div>
+    </div>
+    <div class="charts-row c-2 mb-20">
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">Pareto Analysis — ค่าซ่อมตามประเภทงาน</div><div class="card-sub">80% ของต้นทุนมาจาก 2 ประเภทหลัก</div></div></div>
+        <div style="height:250px"><canvas id="paretoChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">ต้นทุนเฉลี่ยต่อรายการแยกหมวด</div><div class="card-sub">ยาง มีต้นทุนต่อรายการสูงสุด</div></div></div>
+        <div style="height:250px"><canvas id="avgCostChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card mb-20">
+      <div class="card-head"><div><div class="card-title">แนวโน้มต้นทุนรายเดือน — เปรียบเทียบ 2024 vs 2025</div><div class="card-sub">เส้นเปรียบเทียบค่าใช้จ่ายรายเดือน (ม.ค.–ธ.ค.)</div></div></div>
+      <div style="height:220px"><canvas id="yoyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: FLEET ═══ -->
+  <div id="page-fleet" class="page-section">
+    <div class="section-header"><span class="section-tag">VEHICLE</span><span class="section-title">ข้อมูลรายคัน</span><div class="section-line"></div></div>
+    <div class="charts-row c-2 mb-20">
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">Top 10 รถที่มีค่าซ่อมสูงสุด</div><div class="card-sub">มูลค่าค่าซ่อมสะสม (บาท)</div></div></div>
+        <div style="height:270px"><canvas id="vehicleChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">จำนวนรายการซ่อมต่อคัน (Top 10)</div><div class="card-sub">รถที่เข้าซ่อมบ่อยที่สุด</div></div></div>
+        <div style="height:270px"><canvas id="freqChart"></canvas></div>
+      </div>
+    </div>
+    <div class="section-header"><span class="section-tag">TABLE</span><span class="section-title">ตารางสรุปรายคัน — Risk Ranking</span><div class="section-line"></div></div>
+    <div class="chart-card mb-20">
+      <table>
+        <thead><tr><th>อันดับ</th><th>ทะเบียน</th><th>ค่าซ่อมรวม</th><th>จำนวนครั้ง</th><th>เฉลี่ย/ครั้ง</th><th>ระดับความเสี่ยง</th><th>สถานะ</th></tr></thead>
+        <tbody id="vehicleTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: INSIGHT ═══ -->
+  <div id="page-insight" class="page-section">
+    <div class="section-header"><span class="section-tag">EXECUTIVE SUMMARY</span><span class="section-title">สรุปสำหรับผู้บริหารและข้อเสนอแนะ</span><div class="section-line"></div></div>
+    <div class="insight-grid mb-20">
+      <div class="insight-card"><span class="insight-icon">✅</span><div>
+        <div class="insight-title">สิ่งที่ทำได้ดี (หลัง Reclassify)</div>
+        <div class="insight-text">• PM สูงถึง 63% หลังปรับนิยาม — ใกล้เคียง Benchmark 70:30<br>• "เปลี่ยนยาง" ถูก tag เป็น PM ถูกต้อง → สะท้อนการวางแผนจริง<br>• ค่าใช้จ่ายรายเดือนคงที่ ไม่มีการพุ่งสูงผิดปกติ</div>
+      </div></div>
+      <div class="insight-card"><span class="insight-icon">🔴</span><div>
+        <div class="insight-title">ปัญหาหลักที่ต้องแก้ไข</div>
+        <div class="insight-text">• RTF จริง 37% — ยังเกิน Benchmark เล็กน้อย (ควร &lt; 30%)<br>• เครื่องยนต์ RTF ฿1.2M + ช่วงล่าง RTF ฿1.1M ยังสูง<br>• V1-923556 RTF ซ้ำ 43 ครั้ง ควรประเมิน Life Cycle</div>
+      </div></div>
+      <div class="insight-card"><span class="insight-icon">⚠️</span><div>
+        <div class="insight-title">ความเสี่ยงที่ต้องเฝ้าระวัง</div>
+        <div class="insight-text">• RTF ปี 2025 เพิ่มขึ้นจากปี 2024 (304→357 ครั้ง) — Fleet อาจอายุมากขึ้น<br>• ปะยาง RTF ยังไม่มีแผนป้องกัน — อาจต้องวิเคราะห์เส้นทางที่ทำให้ยางแตก<br>• ไม่มีข้อมูล Downtime Hours — ไม่สามารถคำนวณ MTBF/MTTR ได้</div>
+      </div></div>
+      <div class="insight-card"><span class="insight-icon">💡</span><div>
+        <div class="insight-title">ข้อเสนอแนะเชิงกลยุทธ์</div>
+        <div class="insight-text">• เป้าหมาย PM:RTF = 70:30 — ต้องลด RTF อีก ~7% (≈50 รายการ/ปี)<br>• ทำ Tire Route Analysis — หาเส้นทางที่ทำให้ปะยางบ่อย<br>• ประเมิน Total Cost of Ownership รถที่ RTF ซ้ำ &gt; 30 ครั้ง</div>
+      </div></div>
+    </div>
+    <div class="section-header"><span class="section-tag">ACTION PLAN</span><span class="section-title">แผนการปรับปรุง 90 วัน</span><div class="section-line"></div></div>
+    <div class="chart-card mb-20">
+      <table>
+        <thead><tr><th>ระยะเวลา</th><th>แผนงาน</th><th>KPI เป้าหมาย</th><th>ผู้รับผิดชอบ</th><th>ผลที่คาดหวัง</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td class="td-primary">เดือน 1</td><td>ทบทวนและปรับแผน PM Schedule ทุก 43 คัน</td><td>PM Compliance > 85%</td><td>ฝ่ายซ่อมบำรุง</td><td>ลด RTF 15–20%</td><td><span class="kpi-badge badge-red">🔴 สูง</span></td></tr>
+          <tr><td class="td-primary">เดือน 1</td><td>จัดทำ Tire Tracking Sheet แยกรายคัน</td><td>Tire Cost &lt; 30%</td><td>ฝ่ายจัดซื้อ + ซ่อมบำรุง</td><td>ลดค่ายาง ฿500K/ปี</td><td><span class="kpi-badge badge-red">🔴 สูง</span></td></tr>
+          <tr><td class="td-primary">เดือน 2</td><td>ประเมิน Total Cost of Ownership รถ Top 10</td><td>TCO Analysis ครบ 10 คัน</td><td>ผู้จัดการ Fleet</td><td>ตัดสินใจเปลี่ยนรถ</td><td><span class="kpi-badge badge-amber">🟡 กลาง</span></td></tr>
+          <tr><td class="td-primary">เดือน 2</td><td>เพิ่มข้อมูล Downtime และ MTBF ใน SAP/ERP</td><td>Data Completeness > 90%</td><td>IT + ฝ่ายซ่อมบำรุง</td><td>วิเคราะห์ MTBF/MTTR</td><td><span class="kpi-badge badge-amber">🟡 กลาง</span></td></tr>
+          <tr><td class="td-primary">เดือน 3</td><td>ตั้ง KPI Dashboard รายเดือนสำหรับผู้บริหาร</td><td>Report ทุกวันที่ 5 ของเดือน</td><td>ทุกฝ่าย</td><td>ติดตามได้ Real-time</td><td><span class="kpi-badge badge-green">🟢 ต่ำ</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-header"><span class="section-tag">ROI</span><span class="section-title">ประมาณการการประหยัดต้นทุน</span><div class="section-line"></div></div>
+    <div class="charts-row c-2 mb-20">
+      <div class="chart-card">
+        <div class="card-head"><div><div class="card-title">ศักยภาพการลดต้นทุน (ประมาณการ)</div><div class="card-sub">หากปรับ PM:RTF เป็น 60:40</div></div></div>
+        <div style="height:220px"><canvas id="savingChart"></canvas></div>
+      </div>
+      <div class="chart-card" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <div class="card-title mb-14">สมมติฐานการวิเคราะห์</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:2;border-left:2px solid var(--blue);padding-left:12px">
+            📌 ไม่มีข้อมูล KM/คัน จึงไม่สามารถคำนวณ Cost/KM ได้<br>
+            📌 ไม่มีข้อมูล Downtime Hours (MTBF/MTTR ไม่ครบ)<br>
+            📌 ประมาณการ Fleet Availability จาก Order Frequency<br>
+            📌 ใช้อัตรา PM:RTF มาตรฐาน 70:30 เป็น Benchmark<br>
+            📌 ต้นทุน RTF เฉลี่ยสูงกว่า PM ประมาณ 35% (จากข้อมูลจริง)
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">ศักยภาพประหยัด/ปี (ประมาณการ)</div>
+          <div style="font-size:32px;font-weight:600;color:var(--green);font-family:'IBM Plex Mono',monospace">฿2.1M+</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">หากลด RTF ลง 30% และบริหารยางได้ดีขึ้น</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const COLORS={ยาง:'#378ADD',เครื่องยนต์:'#1D9E75',อื่นๆ:'#e39c30',ช่วงล่าง:'#D4537E'};
+const GROUPS=['ยาง','เครื่องยนต์','อื่นๆ','ช่วงล่าง'];
+
+const ALL_MONTHLY=[
+  {ym:'2024-01',v:513636,g:{ยาง:198458,เครื่องยนต์:184080,อื่นๆ:131098,ช่วงล่าง:0}},
+  {ym:'2024-02',v:558373,g:{ยาง:234946,เครื่องยนต์:118460,อื่นๆ:132875,ช่วงล่าง:72092}},
+  {ym:'2024-03',v:586089,g:{ยาง:238178,เครื่องยนต์:158170,อื่นๆ:141670,ช่วงล่าง:48070}},
+  {ym:'2024-04',v:616056,g:{ยาง:296253,เครื่องยนต์:178170,อื่นๆ:97654,ช่วงล่าง:43980}},
+  {ym:'2024-05',v:619267,g:{ยาง:239056,เครื่องยนต์:210530,อื่นๆ:108540,ช่วงล่าง:61141}},
+  {ym:'2024-06',v:820322,g:{ยาง:335580,เครื่องยนต์:209737,อื่นๆ:270664,ช่วงล่าง:4342}},
+  {ym:'2024-07',v:686314,g:{ยาง:303710,เครื่องยนต์:246960,อื่นๆ:54900,ช่วงล่าง:80744}},
+  {ym:'2024-08',v:675989,g:{ยาง:284860,เครื่องยนต์:216089,อื่นๆ:123800,ช่วงล่าง:51240}},
+  {ym:'2024-09',v:564617,g:{ยาง:205327,เครื่องยนต์:144300,อื่นๆ:99240,ช่วงล่าง:115750}},
+  {ym:'2024-10',v:609462,g:{ยาง:276309,เครื่องยนต์:161050,อื่นๆ:123430,ช่วงล่าง:48673}},
+  {ym:'2024-11',v:684690,g:{ยาง:254346,เครื่องยนต์:216210,อื่นๆ:125090,ช่วงล่าง:89045}},
+  {ym:'2024-12',v:646856,g:{ยาง:211308,เครื่องยนต์:310410,อื่นๆ:119530,ช่วงล่าง:5608}},
+  {ym:'2025-01',v:548521,g:{ยาง:133178,เครื่องยนต์:211634,อื่นๆ:102819,ช่วงล่าง:100890}},
+  {ym:'2025-02',v:612319,g:{ยาง:205374,เครื่องยนต์:166550,อื่นๆ:169695,ช่วงล่าง:70700}},
+  {ym:'2025-03',v:526294,g:{ยาง:196308,เครื่องยนต์:252595,อื่นๆ:65530,ช่วงล่าง:11862}},
+  {ym:'2025-04',v:535139,g:{ยาง:157804,เครื่องยนต์:180116,อื่นๆ:178320,ช่วงล่าง:18900}},
+  {ym:'2025-05',v:483916,g:{ยาง:180514,เครื่องยนต์:230700,อื่นๆ:47650,ช่วงล่าง:25052}},
+  {ym:'2025-06',v:603370,g:{ยาง:254720,เครื่องยนต์:225280,อื่นๆ:77030,ช่วงล่าง:46340}},
+  {ym:'2025-07',v:635296,g:{ยาง:198505,เครื่องยนต์:252012,อื่นๆ:173079,ช่วงล่าง:11700}},
+  {ym:'2025-08',v:572505,g:{ยาง:237150,เครื่องยนต์:176776,อื่นๆ:122180,ช่วงล่าง:36400}},
+  {ym:'2025-09',v:639474,g:{ยาง:198365,เครื่องยนต์:264260,อื่นๆ:140409,ช่วงล่าง:36440}},
+  {ym:'2025-10',v:696306,g:{ยาง:176589,เครื่องยนต์:282320,อื่นๆ:199524,ช่วงล่าง:37874}},
+  {ym:'2025-11',v:741189,g:{ยาง:214019,เครื่องยนต์:347430,อื่นๆ:151100,ช่วงล่าง:28640}},
+  {ym:'2025-12',v:712803,g:{ยาง:200721,เครื่องยนต์:240827,อื่นๆ:229325,ช่วงล่าง:41930}},
+  {ym:'2026-01',v:668061,g:{ยาง:233178,เครื่องยนต์:255563,อื่นๆ:133400,ช่วงล่าง:45920}},
+  {ym:'2026-02',v:630363,g:{ยาง:254159,เครื่องยนต์:205784,อื่นๆ:110405,ช่วงล่าง:60015}},
+  {ym:'2026-03',v:517982,g:{ยาง:252897,เครื่องยนต์:156430,อื่นๆ:90665,ช่วงล่าง:17990}},
+  {ym:'2026-04',v:706352,g:{ยาง:254953,เครื่องยนต์:311904,อื่นๆ:128195,ช่วงล่าง:11300}},
+  {ym:'2026-05',v:590869,g:{ยาง:185481,เครื่องยนต์:242690,อื่นๆ:161576,ช่วงล่าง:1122}},
+];
+
+const VEHICLES=[
+  {id:'V1-923556',total:805139,orders:66},
+  {id:'V1-962579',total:713375,orders:60},
+  {id:'V1-504108',total:698215,orders:61},
+  {id:'V1-504109',total:654566,orders:47},
+  {id:'V1-992174',total:642833,orders:53},
+  {id:'V1-534279',total:589574,orders:43},
+  {id:'V1-514447',total:584430,orders:65},
+  {id:'V1-995750',total:582754,orders:33},
+  {id:'V1-510416',total:545351,orders:47},
+  {id:'V1-913191',total:536201,orders:48},
+  {id:'V1-504110',total:529773,orders:46},
+  {id:'V1-521049',total:525830,orders:43},
+  {id:'V1-996758',total:509887,orders:51},
+  {id:'V1-514448',total:505464,orders:48},
+  {id:'V1-967670',total:487217,orders:41},
+];
+
+// Priority — reclassified: เปลี่ยนยาง→PM, ปะยาง→RTF
+const PRIORITY=[
+  {p:'Preventive Maint. (PM)',v:11421555,c:858,color:'#1D9E75'},
+  {p:'Run to Failed (RTF)',v:6580875,c:795,color:'#E24B4A'},
+  {p:'Re-work',v:34766,c:1,color:'#e39c30'},
+];
+
+const SUBCATS=[
+  {d:'ค่ายาง',v:6612245,c:322,group:'ยาง'},
+  {d:'ระบบเครื่องยนต์',v:6357037,c:641,group:'เครื่องยนต์'},
+  {d:'ระบบช่วงล่าง',v:1223757,c:89,group:'ช่วงล่าง'},
+  {d:'ระบบส่งกำลัง',v:949412,c:50,group:'อื่นๆ'},
+  {d:'ระบบปรับอากาศ',v:794112,c:110,group:'อื่นๆ'},
+  {d:'อื่นๆ อุปกรณ์รถ',v:792345,c:152,group:'อื่นๆ'},
+  {d:'ระบบเฮี้ยบ',v:511013,c:112,group:'อื่นๆ'},
+  {d:'ระบบไฟ',v:444325,c:126,group:'อื่นๆ'},
+  {d:'ระบบเบรค',v:318185,c:51,group:'อื่นๆ'},
+];
+
+// RTF monthly — reclassified (เปลี่ยนยาง→PM, ปะยาง→RTF)
+const RTF_MONTHLY={
+  2024:{c:[28,33,23,22,29,26,19,26,15,27,28,28],v:[214180,232140,199280,195060,222340,210780,153620,198480,115890,208640,216590,213610]},
+  2025:{c:[24,26,31,20,20,26,34,35,39,27,38,37],v:[182470,208340,199180,148270,130540,182380,248190,265190,285580,168760,327420,334120]},
+  2026:{c:[23,29,19,35,28, 0, 0, 0, 0, 0, 0, 0],v:[153920,205360,134690,253880,231980,0,0,0,0,0,0,0]},
+};
+// RTF by group — reclassified
+const RTF_BY_GROUP={
+  2024:{ยาง:169832,อื่นๆ:1366737,เครื่องยนต์:463356,ช่วงล่าง:620683},
+  2025:{ยาง:242917,อื่นๆ:1557401,เครื่องยนต์:737380,ช่วงล่าง:442737},
+  2026:{ยาง:110855,อื่นๆ:607716,เครื่องยนต์:124916,ช่วงล่าง:136347},
+};
+// RTF total — reclassified
+const RTF_TOTAL={
+  2024:{sum:2620608,count:304,mean:8621},
+  2025:{sum:2980434,count:357,mean:8349},
+  2026:{sum: 979834,count:134,mean:7312},
+};
+// RTF repeat top 10 — reclassified
+const RTF_REPEAT=[
+  {id:'V1-923556',count:43,total:409297},
+  {id:'V1-962579',count:39,total:356652},
+  {id:'V1-514447',count:34,total:204318},
+  {id:'V1-504108',count:32,total:276478},
+  {id:'V1-913191',count:31,total:347305},
+  {id:'V1-972833',count:31,total:196540},
+  {id:'V1-992174',count:30,total:287965},
+  {id:'V1-016202',count:28,total:150266},
+  {id:'V1-504109',count:27,total:303627},
+  {id:'V1-967670',count:27,total:393491},
+];
+
+// RTF per vehicle per year — reclassified
+const RTF_VEH_YEAR=[
+  {id:'V1-923556',c24:19,c25:15,c26: 9,cost24:169312,cost25:167378,cost26: 72607},
+  {id:'V1-962579',c24:16,c25:14,c26: 9,cost24:207896,cost25: 81133,cost26: 67623},
+  {id:'V1-514447',c24:10,c25:15,c26: 9,cost24: 47700,cost25: 78540,cost26: 78078},
+  {id:'V1-504108',c24:12,c25:14,c26: 6,cost24:109819,cost25:111779,cost26: 54880},
+  {id:'V1-913191',c24:16,c25:10,c26: 5,cost24:199955,cost25:107970,cost26: 39380},
+  {id:'V1-972833',c24:10,c25:15,c26: 6,cost24:109830,cost25: 55120,cost26: 31590},
+  {id:'V1-992174',c24: 9,c25:16,c26: 5,cost24: 41991,cost25:212619,cost26: 33355},
+  {id:'V1-016202',c24: 6,c25:14,c26: 8,cost24: 32359,cost25: 66936,cost26: 50971},
+  {id:'V1-504109',c24:11,c25:14,c26: 2,cost24:127027,cost25:172236,cost26:  4364},
+  {id:'V1-967670',c24:12,c25:13,c26: 2,cost24: 94590,cost25:288341,cost26: 10560},
+  {id:'V1-514449',c24:10,c25:11,c26: 5,cost24: 67023,cost25: 31871,cost26: 43991},
+  {id:'V1-510416',c24:12,c25:10,c26: 3,cost24: 69731,cost25:108359,cost26: 15680},
+  {id:'V1-992173',c24: 9,c25:10,c26: 6,cost24: 40491,cost25: 55140,cost26: 45934},
+  {id:'V1-504110',c24:10,c25:10,c26: 4,cost24: 79413,cost25: 69019,cost26:  5354},
+  {id:'V1-016201',c24: 6,c25:13,c26: 5,cost24: 36690,cost25:109830,cost26: 37751},
+  {id:'V1-534279',c24: 8,c25:11,c26: 2,cost24: 51369,cost25:155436,cost26: 16484},
+  {id:'V1-514448',c24: 8,c25:12,c26: 3,cost24: 58349,cost25: 91892,cost26: 40868},
+  {id:'V1-501564',c24: 6,c25:12,c26: 3,cost24: 43931,cost25: 97787,cost26: 24910},
+  {id:'V1-521049',c24: 8,c25: 9,c26: 5,cost24:109667,cost25: 63351,cost26: 29564},
+  {id:'V1-996758',c24: 7,c25:10,c26: 5,cost24: 72396,cost25: 66156,cost26: 50890},
+  {id:'V1-995750',c24: 4,c25: 9,c26: 2,cost24: 19893,cost25:130920,cost26:  9350},
+  {id:'V1-523526',c24: 7,c25: 7,c26: 3,cost24: 60250,cost25: 74180,cost26: 23890},
+  {id:'V1-524730',c24: 5,c25: 8,c26: 3,cost24: 40820,cost25: 62130,cost26: 19760},
+  {id:'V1-011721',c24: 6,c25: 6,c26: 4,cost24: 50160,cost25: 55320,cost26: 31230},
+  {id:'V1-995751',c24: 4,c25: 7,c26: 3,cost24: 28280,cost25: 53460,cost26: 19870},
+];
+
+// RTF REPEAT per month — reclassified (2nd+ RTF same vehicle same year)
+const RTF_REPEAT_MONTHLY={
+  2024:[ 7,22,22,20,27,24,18,24,15,27,28,28],
+  2025:[ 8,16,26,15,19,25,32,34,39,27,38,37],
+  2026:[ 6,19,14,32,26, 0, 0, 0, 0, 0, 0, 0],
+};
+
+// RTF year summary — reclassified
+const RTF_YEAR_SUMMARY={
+  2024:{total_rtf:304,repeat_vehicles:38,vehicles_with_rtf:42,total_cost:2620608,avg_per_veh:7.2},
+  2025:{total_rtf:357,repeat_vehicles:37,vehicles_with_rtf:41,total_cost:2980434,avg_per_veh:8.7},
+  2026:{total_rtf:134,repeat_vehicles:22,vehicles_with_rtf:37,total_cost: 979834,avg_per_veh:3.6},
+};
+
+let repeatView='count'; // 'count' or 'cost'
+function setRepeatView(v){
+  repeatView=v;
+  document.getElementById('btnCount').style.background=v==='count'?'var(--blue-dim)':'none';
+  document.getElementById('btnCount').style.borderColor=v==='count'?'var(--blue)':'var(--border2)';
+  document.getElementById('btnCount').style.color=v==='count'?'var(--blue)':'var(--text-muted)';
+  document.getElementById('btnCost').style.background=v==='cost'?'var(--blue-dim)':'none';
+  document.getElementById('btnCost').style.borderColor=v==='cost'?'var(--blue)':'var(--border2)';
+  document.getElementById('btnCost').style.color=v==='cost'?'var(--blue)':'var(--text-muted)';
+  buildRepeatCompare();
+}
+
+function buildRepeatMonthly(baseYr, cmpYr){
+  const is2026=(cmpYr===2026);
+  const cmpMonths=is2026?5:12;
+  const baseData=RTF_REPEAT_MONTHLY[baseYr].slice(0,12);
+  const cmpData =RTF_REPEAT_MONTHLY[cmpYr].slice(0,cmpMonths);
+  const labels=MONTHS_TH.slice(0,Math.max(12,cmpMonths));
+
+  // % change per month (only for months both have data)
+  const pctChange=MONTHS_TH.slice(0,cmpMonths).map((_,i)=>{
+    const b=baseData[i]||0, c=cmpData[i]||0;
+    if(b===0) return null;
+    return Math.round((c-b)/b*100);
+  });
+
+  // summary badge
+  const validMonths=pctChange.filter(v=>v!==null);
+  const improved=validMonths.filter(v=>v<0).length;
+  const worsened=validMonths.filter(v=>v>0).length;
+  const avgPct=validMonths.length?Math.round(validMonths.reduce((s,v)=>s+v,0)/validMonths.length):0;
+  document.getElementById('repeatMonthlyTitle').textContent=`RTF ซ้ำรายเดือน — ปี ${baseYr} vs ${cmpYr}${is2026?' (2026 ม.ค.–พ.ค.)':''}`;
+  const badge=document.getElementById('repeatMonthlyBadge');
+  if(avgPct<0){badge.className='kpi-badge badge-green';badge.textContent=`✅ เฉลี่ยลดลง ${Math.abs(avgPct)}% (${improved}/${validMonths.length} เดือน)`;}
+  else{badge.className='kpi-badge badge-red';badge.textContent=`⚠ เฉลี่ยเพิ่มขึ้น ${avgPct}% (${worsened}/${validMonths.length} เดือนแย่ลง)`;}
+
+  // Bar colors per month for cmp year (green if lower, red if higher)
+  const cmpColors=cmpData.map((v,i)=>{
+    const b=baseData[i]||0;
+    if(v===0&&b===0) return 'rgba(255,255,255,0.1)';
+    return v<=b?'rgba(29,158,117,0.75)':'rgba(226,75,74,0.75)';
+  });
+
+  if(charts.repeatMonthly) charts.repeatMonthly.destroy();
+  charts.repeatMonthly=new Chart(document.getElementById('repeatMonthlyChart'),{
+    type:'bar',
+    data:{
+      labels:MONTHS_TH,
+      datasets:[
+        {
+          label:`ปี ${baseYr}`,
+          data:baseData,
+          backgroundColor:'rgba(55,138,221,0.35)',
+          borderColor:'rgba(55,138,221,0.8)',
+          borderWidth:1.5,
+          borderRadius:3,
+          type:'bar',
+        },
+        {
+          label:`ปี ${cmpYr}`,
+          data:[...cmpData,...Array(12-cmpMonths).fill(null)],
+          backgroundColor:cmpColors,
+          borderRadius:3,
+          type:'bar',
+        },
+        {
+          label:`แนวโน้ม ${baseYr}`,
+          data:baseData,
+          borderColor:'rgba(55,138,221,0.5)',
+          borderWidth:1.5,
+          borderDash:[4,3],
+          pointRadius:0,
+          fill:false,
+          tension:0.4,
+          type:'line',
+        },
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12},filter:i=>i.datasetIndex<2},
+        tooltip:{
+          mode:'index',
+          callbacks:{
+            label:c=>{
+              if(c.datasetIndex===2) return null;
+              const yr=c.datasetIndex===0?baseYr:cmpYr;
+              return `ปี ${yr}: ${c.raw??'-'} ครั้ง`;
+            },
+            afterBody:(items)=>{
+              const b=items.find(i=>i.datasetIndex===0);
+              const c2=items.find(i=>i.datasetIndex===1);
+              if(!b||!c2||c2.raw==null) return [];
+              const bv=b.raw||0,cv=c2.raw||0;
+              if(bv===0) return [];
+              const p=Math.round((cv-bv)/bv*100);
+              return [p<0?`▼ ลดลง ${Math.abs(p)}% ✅`:`▲ เพิ่มขึ้น ${p}% ⚠`];
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#8b949e',font:{size:11}},grid:{display:false}},
+        y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>v+' ครั้ง'},grid:{color:'rgba(255,255,255,0.05)'},title:{display:true,text:'จำนวนซ่อมซ้ำ (ครั้ง)',color:'#484f58',font:{size:10}}}
+      }
+    }
+  });
+
+  // % change mini bar
+  if(charts.repeatMonthlyPct) charts.repeatMonthlyPct.destroy();
+  charts.repeatMonthlyPct=new Chart(document.getElementById('repeatMonthlyPctChart'),{
+    type:'bar',
+    data:{
+      labels:MONTHS_TH,
+      datasets:[{
+        label:'% เปลี่ยนแปลง',
+        data:[...pctChange,...Array(12-cmpMonths).fill(null)],
+        backgroundColor:pctChange.map(v=>v===null?'transparent':v<=0?'rgba(29,158,117,0.75)':'rgba(226,75,74,0.75)'),
+        borderRadius:2,
+      },{
+        label:'เส้น 0%',
+        data:Array(12).fill(0),
+        type:'line',
+        borderColor:'rgba(255,255,255,0.15)',
+        borderWidth:1,
+        borderDash:[3,3],
+        pointRadius:0,
+        fill:false,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>c.raw!=null?(c.raw>0?'▲ +'+c.raw+'%':'▼ '+c.raw+'%'):''}}
+      },
+      scales:{
+        x:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}},
+        y:{
+          ticks:{color:'#8b949e',font:{size:9},callback:v=>v+'%'},
+          grid:{color:'rgba(255,255,255,0.05)'},
+        }
+      }
+    }
+  });
+}
+
+function buildRepeatCompare(){
+  const baseYr=parseInt(document.getElementById('repeatBaseYear').value);
+  const cmpYr=parseInt(document.getElementById('repeatCmpYear').value);
+  const is2026=(cmpYr===2026);
+  const factor=is2026?12/5:1; // annualise 2026
+  const baseKey='c'+String(baseYr).slice(2);
+  const cmpKey ='c'+String(cmpYr).slice(2);
+  const baseCostKey='cost'+String(baseYr).slice(2);
+  const cmpCostKey ='cost'+String(cmpYr).slice(2);
+
+  const bs=RTF_YEAR_SUMMARY[baseYr], cs=RTF_YEAR_SUMMARY[cmpYr];
+  const cmpRtf  =is2026?Math.round(cs.total_rtf*factor):cs.total_rtf;
+  const cmpCost =is2026?Math.round(cs.total_cost*factor):cs.total_cost;
+  const cmpAvg  =is2026?Math.round(cs.avg_per_veh*factor*10)/10:cs.avg_per_veh;
+  const cmpRepeat=is2026?Math.round(cs.repeat_vehicles*factor):cs.repeat_vehicles;
+
+  function pct(a,b){return a===0?0:((b-a)/a*100);}
+  function diffColor(v){return v<0?'var(--green)':'var(--red)';}
+  function arrow(v){return v<0?'▼':'▲';}
+
+  // KPI diff cards
+  const cards=[
+    {label:'จำนวน RTF ทั้งหมด',base:bs.total_rtf,cmp:cmpRtf,baseF:bs.total_rtf+' ครั้ง',cmpF:cs.total_rtf+(is2026?' ครั้ง*':' ครั้ง'),diff:pct(bs.total_rtf,cmpRtf)},
+    {label:'รถที่มี RTF ซ้ำ (≥3×)',base:bs.repeat_vehicles,cmp:cmpRepeat,baseF:bs.repeat_vehicles+' คัน',cmpF:cs.repeat_vehicles+(is2026?' คัน*':' คัน'),diff:pct(bs.repeat_vehicles,cmpRepeat)},
+    {label:'เฉลี่ย RTF/คัน',base:bs.avg_per_veh,cmp:cmpAvg,baseF:bs.avg_per_veh+' ครั้ง',cmpF:cs.avg_per_veh+(is2026?' ครั้ง*':' ครั้ง'),diff:pct(bs.avg_per_veh,cmpAvg)},
+    {label:'ต้นทุน RTF รวม',base:bs.total_cost,cmp:cmpCost,baseF:fmt(bs.total_cost),cmpF:fmt(cs.total_cost)+(is2026?' *':''),diff:pct(bs.total_cost,cmpCost)},
+  ];
+
+  document.getElementById('repeatDiffCards').innerHTML=cards.map(c=>`
+    <div class="kpi-card" style="position:relative;overflow:hidden;">
+      <div class="kpi-accent" style="background:${diffColor(c.diff)}"></div>
+      <div class="kpi-label" style="font-size:11px">${c.label}</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;margin:6px 0 4px">
+        <div style="font-size:11px;color:var(--text-dim)">ปี ${baseYr}<br><span style="font-size:14px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace">${c.baseF}</span></div>
+        <div style="font-size:16px;color:var(--text-dim);margin-bottom:1px">→</div>
+        <div style="font-size:11px;color:var(--text-dim)">ปี ${cmpYr}<br><span style="font-size:14px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace">${c.cmpF}</span></div>
+      </div>
+      <div style="font-size:22px;font-weight:700;color:${diffColor(c.diff)};font-family:'IBM Plex Mono',monospace;margin-bottom:2px">${arrow(c.diff)} ${Math.abs(c.diff).toFixed(1)}%</div>
+      ${is2026?'<div style="font-size:9px;color:var(--text-dim)">* ปรับเป็นฐานปีเต็ม (×12/5)</div>':'<div style="font-size:9px;color:transparent;">-</div>'}
+    </div>`).join('');
+
+  // Prepare vehicle data (top 20 by base year)
+  const useCount=(repeatView==='count');
+  const sorted=[...RTF_VEH_YEAR].sort((a,b)=>(b[baseKey]||0)-(a[baseKey]||0)).slice(0,15);
+  const baseVals=sorted.map(v=>v[useCount?baseKey:baseCostKey]||0);
+  const cmpVals =sorted.map(v=>{
+    const raw=v[useCount?cmpKey:cmpCostKey]||0;
+    return is2026?Math.round(raw*factor):raw;
+  });
+
+  // Grouped bar chart
+  if(charts.repeatBar) charts.repeatBar.destroy();
+  document.getElementById('repeatChartTitle').textContent=`RTF ซ้ำรายคัน — ปี ${baseYr} vs ${cmpYr}${is2026?' (2026 ปรับปีเต็ม)':''}`;
+  charts.repeatBar=new Chart(document.getElementById('repeatBarChart'),{
+    type:'bar',
+    data:{
+      labels:sorted.map(v=>v.id),
+      datasets:[
+        {label:`ปี ${baseYr}`,data:baseVals,backgroundColor:'rgba(55,138,221,0.75)',borderRadius:3},
+        {label:`ปี ${cmpYr}`,data:cmpVals, backgroundColor:'rgba(226,75,74,0.75)', borderRadius:3},
+      ]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(useCount?c.raw+' ครั้ง':fmtFull(c.raw))}}
+      },
+      scales:{
+        x:{ticks:{color:'#8b949e',font:{size:10},callback:v=>useCount?v+' ครั้ง':fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+
+  // % change horizontal bar
+  const pctData=sorted.map((v,i)=>{
+    const b=baseVals[i]||0, c2=cmpVals[i]||0;
+    return b===0?0:Math.round((c2-b)/b*100);
+  });
+  const pctColors=pctData.map(v=>v<=0?'#1D9E75':'#E24B4A');
+  if(charts.repeatPct) charts.repeatPct.destroy();
+  charts.repeatPct=new Chart(document.getElementById('repeatPctChart'),{
+    type:'bar',
+    data:{
+      labels:sorted.map(v=>v.id),
+      datasets:[{
+        label:'% เปลี่ยนแปลง',
+        data:pctData,
+        backgroundColor:pctColors,
+        borderRadius:3,
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>(c.raw>0?'▲ +':'▼ ')+c.raw+'%'}}
+      },
+      scales:{
+        x:{
+          ticks:{color:'#8b949e',font:{size:10},callback:v=>v+'%'},
+          grid:{color:'rgba(255,255,255,0.05)'},
+          min:Math.min(...pctData)-10, max:Math.max(...pctData)+10
+        },
+        y:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+
+  // Update table headers
+  document.getElementById('thBase').textContent='ปี '+baseYr+(useCount?' (ครั้ง)':' (฿)');
+  document.getElementById('thCmp').textContent='ปี '+cmpYr+(is2026?' * ':'')+(useCount?' (ครั้ง)':' (฿)');
+  document.getElementById('repeatTableTitle').textContent=`รายละเอียด RTF ซ้ำ — ปี ${baseYr} vs ${cmpYr}`;
+
+  // Table — all vehicles sorted by % change desc (most increased = highest risk first)
+  const allVehs=[...RTF_VEH_YEAR].map(v=>{
+    const bv=useCount?(v[baseKey]||0):(v[baseCostKey]||0);
+    const cv_raw=useCount?(v[cmpKey]||0):(v[cmpCostKey]||0);
+    const cv=is2026?Math.round(cv_raw*factor):cv_raw;
+    const pChange=bv===0?(cv>0?999:0):Math.round((cv-bv)/bv*100);
+    return {...v,bv,cv,pChange};
+  }).filter(v=>v.bv>0||v.cv>0).sort((a,b)=>b.pChange-a.pChange);
+
+  const increased=allVehs.filter(v=>v.pChange>0).length;
+  const decreased=allVehs.filter(v=>v.pChange<0).length;
+  document.getElementById('repeatSummaryBadge').className='kpi-badge '+(increased>decreased?'badge-red':'badge-green');
+  document.getElementById('repeatSummaryBadge').textContent=increased>decreased?`⚠ เพิ่มขึ้น ${increased} คัน`:`✅ ลดลง ${decreased} คัน`;
+
+  document.getElementById('repeatTableBody').innerHTML=allVehs.map(v=>{
+    const up=v.pChange>0;
+    const same=v.pChange===0;
+    const arrowIcon=same?'—':up?'▲':'▼';
+    const color=same?'var(--text-dim)':up?'var(--red)':'var(--green)';
+    const badge=v.pChange>=50?'badge-red':v.pChange>=20?'badge-amber':v.pChange<=0?'badge-green':'badge-blue';
+    const status=v.pChange>=50?'🔴 เสี่ยงสูง':v.pChange>=20?'🟡 เฝ้าระวัง':v.pChange>0?'🔵 เพิ่มเล็กน้อย':v.pChange===0?'⚪ คงที่':'🟢 ดีขึ้น';
+    const bDisp=useCount?v.bv+' ครั้ง':fmtFull(v.bv);
+    const cDisp=useCount?v.cv+' ครั้ง':fmtFull(v.cv);
+    return `<tr>
+      <td class="td-primary">${v.id}</td>
+      <td class="mono text-right">${bDisp}</td>
+      <td class="mono text-right">${cDisp}</td>
+      <td class="mono text-right" style="color:${color};font-weight:600;">${v.pChange===999?'ใหม่':v.pChange>0?'+'+v.pChange+'%':v.pChange+'%'}</td>
+      <td class="text-center" style="font-size:18px;color:${color}">${arrowIcon}</td>
+      <td><span class="kpi-badge ${badge}">${status}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Build monthly chart with same year selection
+  buildRepeatMonthly(baseYr, cmpYr);
+}
+
+let charts={};
+function destroyAll(){Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};}
+function fmt(n){if(n>=1e6)return'฿'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'฿'+Math.round(n/1e3).toLocaleString()+'K';return'฿'+Math.round(n).toLocaleString();}
+function fmtFull(n){return'฿'+Math.round(n).toLocaleString();}
+function labelOf(ym){const p=ym.split('-');return MONTHS_TH[parseInt(p[1])-1]+' '+p[0].slice(2);}
+
+function getFiltered(){
+  const yr=document.getElementById('fYear').value;
+  const mo=document.getElementById('fMonth').value;
+  const gr=document.getElementById('fGroup').value;
+  let rows=ALL_MONTHLY;
+  if(yr!=='all') rows=rows.filter(r=>r.ym.startsWith(yr));
+  if(mo!=='all'&&yr!=='all') rows=rows.filter(r=>r.ym===yr+'-'+mo);
+  if(gr!=='all') rows=rows.map(r=>({...r,v:r.g[gr]||0,g:{[gr]:r.g[gr]||0,...Object.fromEntries(GROUPS.filter(g=>g!==gr).map(g=>[g,0]))}}));
+  return rows;
+}
+
+function onYearChange(){
+  const yr=document.getElementById('fYear').value;
+  const sel=document.getElementById('fMonth');
+  sel.innerHTML='<option value="all">ทุกเดือน</option>';
+  if(yr!=='all'){
+    ALL_MONTHLY.filter(r=>r.ym.startsWith(yr)).forEach(r=>{
+      const m=r.ym.slice(5);
+      const o=document.createElement('option');
+      o.value=m;o.textContent=MONTHS_TH[parseInt(m)-1];
+      sel.appendChild(o);
+    });
+  }
+  rebuildActive();
+}
+
+function showPage(id,btn){
+  document.querySelectorAll('.page-section').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  const titles={
+    overview:['Executive Overview','ภาพรวมการซ่อมบำรุงยานพาหนะ มกราคม 2024 – พฤษภาคม 2026'],
+    maintenance:['Maintenance Analysis','วิเคราะห์ประสิทธิภาพการบำรุงรักษา'],
+    cost:['Cost Analysis','วิเคราะห์ต้นทุนค่าซ่อมเชิงลึก'],
+    fleet:['Fleet Intelligence','ข้อมูลและ Risk Ranking รายคัน'],
+    insight:['Insight & Recommendations','สรุปสำหรับผู้บริหาร และแผนการปรับปรุง 90 วัน'],
+  };
+  document.getElementById('pageTitle').textContent=titles[id][0];
+  document.getElementById('pageSub').textContent=titles[id][1];
+  rebuildActive();
+}
+
+function rebuildActive(){
+  const active=document.querySelector('.page-section.active');
+  if(!active) return;
+  const id=active.id.replace('page-','');
+  destroyAll();
+  const rows=getFiltered();
+  if(id==='overview') buildOverview(rows);
+  else if(id==='maintenance') buildMaintenance(rows);
+  else if(id==='cost') buildCost(rows);
+  else if(id==='fleet') buildFleet();
+  else if(id==='insight') buildInsight();
+}
+
+/* ── OVERVIEW ── */
+function buildOverview(rows){
+  const total=rows.reduce((s,r)=>s+r.v,0);
+  const ratio=total/18002430;
+  const count=Math.max(1,Math.round(1669*ratio));
+  const avg=total/count;
+
+  document.getElementById('kpiGrid').innerHTML=[
+    {label:'ค่าซ่อมรวม',icon:'💰',value:fmt(total),meta:'มูลค่าทั้งหมด',color:'var(--blue)'},
+    {label:'จำนวนรายการ',icon:'📋',value:count.toLocaleString(),meta:'ใบสั่งซ่อม',color:'var(--green)'},
+    {label:'ค่าเฉลี่ย/รายการ',icon:'📊',value:fmt(avg),meta:'ต่อใบสั่งซ่อม',color:'var(--amber)'},
+    {label:'ค่าเฉลี่ย/คัน',icon:'🚛',value:fmt(total/43),meta:'Fleet 43 คัน',color:'var(--purple)'},
+  ].map(k=>`<div class="kpi-card"><div class="kpi-accent" style="background:${k.color}"></div><div class="kpi-label"><span class="kpi-icon">${k.icon}</span>${k.label}</div><div class="kpi-value">${k.value}</div><div class="kpi-meta"><span style="color:var(--text-dim);font-size:11px">${k.meta}</span></div></div>`).join('');
+
+  const avgVal=total/rows.length;
+  document.getElementById('trendAvgBadge').textContent='เฉลี่ย '+fmt(avgVal)+'/เดือน';
+
+  if(rows.length===1){
+    const gr=document.getElementById('fGroup').value;
+    const grps=gr==='all'?GROUPS:[gr];
+    charts.trend=new Chart(document.getElementById('trendChart'),{type:'bar',data:{labels:grps,datasets:[{data:grps.map(g=>rows[0].g[g]||0),backgroundColor:grps.map(g=>COLORS[g]),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  } else {
+    charts.trend=new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:rows.map(r=>labelOf(r.ym)),datasets:[{label:'ค่าซ่อม',data:rows.map(r=>r.v),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#378ADD',fill:true,tension:0.35},{label:'เฉลี่ย',data:rows.map(()=>avgVal),borderColor:'#E24B4A',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:12},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  }
+
+  const gr=document.getElementById('fGroup').value;
+  const grps=gr==='all'?GROUPS:[gr];
+  const totals={};grps.forEach(g=>{totals[g]=rows.reduce((s,r)=>s+(r.g[g]||0),0);});
+  const totSum=Object.values(totals).reduce((s,v)=>s+v,0);
+  document.getElementById('donutLegend').innerHTML=grps.map(g=>`<span class="legend-item"><span class="legend-box" style="background:${COLORS[g]}"></span>${g} ${totSum?((totals[g]/totSum)*100).toFixed(1):0}%</span>`).join('');
+  charts.donut=new Chart(document.getElementById('donutChart'),{type:'doughnut',data:{labels:grps,datasets:[{data:grps.map(g=>totals[g]),backgroundColor:grps.map(g=>COLORS[g]),borderWidth:3,borderColor:'#161b22'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}}}});
+
+  const pTotal=PRIORITY.reduce((s,p)=>s+p.v,0);
+  document.getElementById('prioritySection').innerHTML=PRIORITY.map(p=>`<div class="priority-item"><div class="pi-label">${p.p}</div><div class="pi-bar-bg"><div class="pi-bar" style="width:${(p.v/pTotal*100).toFixed(0)}%;background:${p.color}"></div></div><div class="pi-val">${fmt(p.v*ratio)}</div><div class="pi-count">${Math.max(1,Math.round(p.c*ratio)).toLocaleString()} รายการ</div></div>`).join('');
+
+  charts.pm=new Chart(document.getElementById('pmChart'),{type:'doughnut',data:{labels:['RTF','PM'],datasets:[{data:[12350638,5617026],backgroundColor:['#E24B4A','#1D9E75'],borderWidth:3,borderColor:'#161b22'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}}}});
+
+  document.getElementById('stackLegend').innerHTML=GROUPS.map(g=>`<span class="legend-item"><span class="legend-box" style="background:${COLORS[g]}"></span>${g}</span>`).join('');
+  charts.stack=new Chart(document.getElementById('stackChart'),{type:'bar',data:{labels:rows.map(r=>labelOf(r.ym)),datasets:GROUPS.map(g=>({label:g,data:rows.map(r=>r.g[g]||0),backgroundColor:COLORS[g],borderRadius:2,stack:'s'}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtFull(c.raw)}}},scales:{x:{stacked:true,ticks:{color:'#8b949e',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:12},grid:{display:false}},y:{stacked:true,ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+}
+
+/* ── RTF COMPARE ── */
+function pct(a,b){return b===0?0:((b-a)/a*100);}
+function arrow(v){return v<0?'▼':'▲';}
+function signColor(v){return v<0?'var(--green)':'var(--red)';}
+
+function buildRtfCompare(){
+  const baseYr=parseInt(document.getElementById('rtfBaseYear').value);
+  const cmpYr=parseInt(document.getElementById('rtfCmpYear').value);
+  const base=RTF_TOTAL[baseYr],cmp=RTF_TOTAL[cmpYr];
+  const is2026cmp=cmpYr===2026;
+  const cmpMonths=is2026cmp?5:12;
+  const baseMonths=baseYr===2026?5:12;
+  const cmpSum=is2026cmp?Math.round(cmp.sum/5*baseMonths):cmp.sum;
+  const cmpCount=is2026cmp?Math.round(cmp.count/5*baseMonths):cmp.count;
+  const diffSum=pct(base.sum,cmpSum);
+  const diffCount=pct(base.count,cmpCount);
+  const diffMean=pct(base.mean,cmp.mean);
+  // RTF rate after reclassification (เปลี่ยนยาง→PM, ปะยาง→RTF)
+  const rateMap={2024:35.4,2025:41.6,2026:38.4};
+  const diffRate=pct(rateMap[baseYr],rateMap[cmpYr]);
+  const note2026=is2026cmp?`<br><span style="font-size:10px;color:var(--text-dim)">* 2026: ปรับเป็นฐานปีเต็ม</span>`:'';
+
+  document.getElementById('rtfDiffCards').innerHTML=[
+    {label:'มูลค่า RTF (บาท)',baseVal:fmtFull(base.sum),cmpVal:fmtFull(cmp.sum),diff:diffSum,note:'เปรียบเทียบปีต่อปี'+note2026},
+    {label:'จำนวนรายการ RTF',baseVal:base.count+' ครั้ง',cmpVal:cmp.count+' ครั้ง',diff:diffCount,note:'เปรียบเทียบปีต่อปี'+note2026},
+    {label:'ค่าเฉลี่ย/รายการ',baseVal:fmtFull(base.mean),cmpVal:fmtFull(cmp.mean),diff:diffMean,note:'ต้นทุน RTF เฉลี่ยต่อครั้ง'},
+    {label:'สัดส่วน RTF %',baseVal:rateMap[baseYr]+'%',cmpVal:rateMap[cmpYr]+'%',diff:diffRate,note:'RTF/(PM+RTF)'},
+  ].map(c=>`<div class="kpi-card" style="position:relative;overflow:hidden"><div class="kpi-accent" style="background:${signColor(c.diff)}"></div><div class="kpi-label" style="font-size:11px">${c.label}</div><div style="display:flex;align-items:flex-end;gap:10px;margin:6px 0 4px"><div style="font-size:11px;color:var(--text-dim)">ปี ${baseYr}<br><span style="font-size:15px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace">${c.baseVal}</span></div><div style="font-size:18px;color:var(--text-dim);margin-bottom:2px">→</div><div style="font-size:11px;color:var(--text-dim)">ปี ${cmpYr}<br><span style="font-size:15px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace">${c.cmpVal}</span></div></div><div style="font-size:20px;font-weight:700;color:${signColor(c.diff)};font-family:'IBM Plex Mono',monospace;margin-bottom:3px">${arrow(c.diff)} ${Math.abs(c.diff).toFixed(1)}%</div><div style="font-size:10px;color:var(--text-dim)">${c.note}</div></div>`).join('');
+
+  const mthLabels=MONTHS_TH.slice(0,Math.max(baseMonths,cmpMonths));
+  if(charts.rtfMonthly) charts.rtfMonthly.destroy();
+  charts.rtfMonthly=new Chart(document.getElementById('rtfMonthlyChart'),{type:'line',data:{labels:mthLabels,datasets:[{label:'ปี '+baseYr,data:RTF_MONTHLY[baseYr].c.slice(0,baseMonths),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#378ADD',fill:false,tension:0.3},{label:'ปี '+cmpYr,data:RTF_MONTHLY[cmpYr].c.slice(0,cmpMonths),borderColor:'#E24B4A',backgroundColor:'rgba(226,75,74,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#E24B4A',fill:false,tension:0.3,borderDash:is2026cmp?[6,3]:[]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' ครั้ง'}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>v+' ครั้ง'},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  document.getElementById('rtfBarTitle').textContent=`RTF รายเดือน — ปี ${baseYr} vs ${cmpYr}`;
+
+  if(charts.rtfCostMonthly) charts.rtfCostMonthly.destroy();
+  charts.rtfCostMonthly=new Chart(document.getElementById('rtfCostMonthlyChart'),{type:'bar',data:{labels:mthLabels,datasets:[{label:'ปี '+baseYr,data:RTF_MONTHLY[baseYr].v.slice(0,baseMonths),backgroundColor:'rgba(55,138,221,0.7)',borderRadius:3},{label:'ปี '+cmpYr,data:RTF_MONTHLY[cmpYr].v.slice(0,cmpMonths),backgroundColor:'rgba(226,75,74,0.7)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtFull(c.raw)}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  document.getElementById('rtfCostBarTitle').textContent=`มูลค่า RTF รายเดือน — ปี ${baseYr} vs ${cmpYr}`;
+
+  const grps=GROUPS;
+  document.getElementById('rtfGroupLegend').innerHTML=[{label:'ปี '+baseYr,color:'#378ADD'},{label:'ปี '+cmpYr,color:'#E24B4A'}].map(l=>`<span class="legend-item"><span class="legend-box" style="background:${l.color}"></span>${l.label}</span>`).join('');
+  if(charts.rtfGroup) charts.rtfGroup.destroy();
+  charts.rtfGroup=new Chart(document.getElementById('rtfGroupChart'),{type:'bar',data:{labels:grps,datasets:[{label:'ปี '+baseYr,data:grps.map(g=>RTF_BY_GROUP[baseYr][g]||0),backgroundColor:'rgba(55,138,221,0.75)',borderRadius:4},{label:'ปี '+cmpYr,data:grps.map(g=>RTF_BY_GROUP[cmpYr][g]||0),backgroundColor:'rgba(226,75,74,0.75)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtFull(c.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+
+  if(charts.rtfRepeat) charts.rtfRepeat.destroy();
+  charts.rtfRepeat=new Chart(document.getElementById('rtfRepeatChart'),{type:'bar',data:{labels:RTF_REPEAT.map(v=>v.id),datasets:[{label:'ครั้ง RTF ซ้ำ',data:RTF_REPEAT.map(v=>v.count),backgroundColor:RTF_REPEAT.map((_,i)=>i<3?'#E24B4A':i<6?'#e39c30':'#378ADD'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' ครั้ง RTF | ฿'+RTF_REPEAT[c.dataIndex].total.toLocaleString()}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10},callback:v=>v+' ครั้ง'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}}}}});
+
+  const savedCost=Math.abs(base.sum-(is2026cmp?cmp.sum/5*12:cmp.sum));
+  const groupChanges=grps.map(g=>({g,ch:pct(RTF_BY_GROUP[baseYr][g]||0,RTF_BY_GROUP[cmpYr][g]||0)})).sort((a,b)=>Math.abs(b.ch)-Math.abs(a.ch));
+  const topChange=groupChanges[0];
+  document.getElementById('rtfInsightText').innerHTML=`<strong style="color:var(--text);font-size:14px">📊 สรุปการเปรียบเทียบ ปี ${baseYr} → ปี ${cmpYr}</strong><br><br>${diffCount<0?`✅ <strong style="color:var(--green)">จำนวน RTF ลดลง ${Math.abs(diffCount).toFixed(1)}%</strong> (จาก ${base.count} → ${cmpYr===2026?cmp.count+' ครั้ง (5 เดือน)':cmpCount+' ครั้ง'})`:
+    `🔴 <strong style="color:var(--red)">จำนวน RTF เพิ่มขึ้น ${Math.abs(diffCount).toFixed(1)}%</strong> (จาก ${base.count} → ${cmpCount} ครั้ง)`}<br>${diffSum<0?`✅ <strong style="color:var(--green)">มูลค่า RTF ลดลง ${Math.abs(diffSum).toFixed(1)}%</strong> ประหยัดได้ประมาณ <strong style="color:var(--green)">฿${Math.round(savedCost).toLocaleString()}</strong>`:
+    `🔴 <strong style="color:var(--red)">มูลค่า RTF เพิ่มขึ้น ${Math.abs(diffSum).toFixed(1)}%</strong> เพิ่มขึ้น ฿${Math.round(savedCost).toLocaleString()}`}<br>${diffMean<0?`✅ ต้นทุน RTF เฉลี่ยต่อครั้ง <strong style="color:var(--green)">ถูกลง ${Math.abs(diffMean).toFixed(1)}%</strong>`:
+    `⚠️ ต้นทุน RTF เฉลี่ยต่อครั้ง <strong style="color:var(--amber)">แพงขึ้น ${Math.abs(diffMean).toFixed(1)}%</strong>`}<br>📌 หมวดที่เปลี่ยนแปลงมากสุด: <strong style="color:var(--text)">${topChange.g}</strong> ${topChange.ch<0?`<span style="color:var(--green)">▼ ลด ${Math.abs(topChange.ch).toFixed(1)}%</span>`:`<span style="color:var(--red)">▲ เพิ่ม ${Math.abs(topChange.ch).toFixed(1)}%</span>`}<br>🔁 V1-923556 ยังคงมี RTF ซ้ำสูงสุด 48 ครั้ง — ควรพิจารณา Overhaul หรือเปลี่ยนทดแทน`;
+}
+
+/* ── MAINTENANCE ── */
+function buildMaintenance(rows){
+  charts.pmYear=new Chart(document.getElementById('pmYearChart'),{type:'bar',data:{labels:['2024','2025','2026*'],datasets:[{label:'PM',data:[268,383,0],backgroundColor:'#1D9E75',borderRadius:4},{label:'RTF',data:[409,426,181],backgroundColor:'#E24B4A',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}}},scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>v+' รายการ'},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+
+  const yr2024=ALL_MONTHLY.filter(r=>r.ym.startsWith('2024')).reduce((s,r)=>s+r.v,0);
+  const yr2025=ALL_MONTHLY.filter(r=>r.ym.startsWith('2025')).reduce((s,r)=>s+r.v,0);
+  const yr2026=ALL_MONTHLY.filter(r=>r.ym.startsWith('2026')).reduce((s,r)=>s+r.v,0);
+  charts.yearComp=new Chart(document.getElementById('yearCompChart'),{type:'bar',data:{labels:['2024','2025','2026*\n(ม.ค.–พ.ค.)'],datasets:[{data:[yr2024,yr2025,yr2026],backgroundColor:['#378ADD','#1D9E75','#e39c30'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+
+  buildRtfCompare();
+  buildRepeatCompare();
+
+  const gr=document.getElementById('fGroup').value;
+  let subs=SUBCATS;
+  if(gr!=='all') subs=subs.filter(s=>s.group===gr);
+  charts.subCat=new Chart(document.getElementById('subCatChart'),{type:'bar',data:{labels:subs.map(s=>s.d),datasets:[{label:'มูลค่า',data:subs.map(s=>s.v),backgroundColor:subs.map(s=>COLORS[s.group]||'#8b949e'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)+' ('+subs[c.dataIndex].c+' รายการ)'}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:11}},grid:{display:false}}}}});
+}
+
+/* ── COST ── */
+function buildCost(rows){
+  const sorted=[...SUBCATS].sort((a,b)=>b.v-a.v);
+  const grand=sorted.reduce((s,d)=>s+d.v,0);
+  let cum=0;const cumPct=[];
+  sorted.forEach(d=>{cum+=d.v;cumPct.push(Math.round(cum/grand*100));});
+  charts.pareto=new Chart(document.getElementById('paretoChart'),{type:'bar',data:{labels:sorted.map(d=>d.d),datasets:[{type:'bar',label:'มูลค่า',data:sorted.map(d=>d.v),backgroundColor:'#378ADD',borderRadius:3,yAxisID:'y'},{type:'line',label:'% สะสม',data:cumPct,borderColor:'#E24B4A',borderWidth:2,pointRadius:4,pointBackgroundColor:'#E24B4A',fill:false,yAxisID:'y2',tension:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}}},scales:{x:{ticks:{color:'#8b949e',font:{size:9},maxRotation:35},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},y2:{position:'right',min:0,max:100,ticks:{color:'#E24B4A',font:{size:9},callback:v=>v+'%'},grid:{display:false}}}}});
+
+  const grpData=[{g:'ยาง',avg:20534,c:322,color:'#378ADD'},{g:'เครื่องยนต์',avg:9810,c:641,color:'#1D9E75'},{g:'ช่วงล่าง',avg:13301,c:89,color:'#D4537E'},{g:'อื่นๆ',avg:6275,c:607,color:'#e39c30'}].sort((a,b)=>b.avg-a.avg);
+  charts.avgCost=new Chart(document.getElementById('avgCostChart'),{type:'bar',data:{labels:grpData.map(d=>d.g),datasets:[{data:grpData.map(d=>d.avg),backgroundColor:grpData.map(d=>d.color),borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'฿'+Math.round(c.raw).toLocaleString()+'/ครั้ง'}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10},callback:v=>'฿'+Math.round(v/1000)+'K'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:12}},grid:{display:false}}}}});
+
+  const m2024=ALL_MONTHLY.filter(r=>r.ym.startsWith('2024')).map(r=>r.v);
+  const m2025=ALL_MONTHLY.filter(r=>r.ym.startsWith('2025')).map(r=>r.v);
+  charts.yoy=new Chart(document.getElementById('yoyChart'),{type:'line',data:{labels:MONTHS_TH,datasets:[{label:'2024',data:m2024,borderColor:'#378ADD',borderWidth:2,pointRadius:3,fill:false,tension:0.3},{label:'2025',data:m2025,borderColor:'#1D9E75',borderWidth:2,pointRadius:3,fill:false,tension:0.3,borderDash:[5,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+}
+
+/* ── FLEET ── */
+function buildFleet(){
+  const top10=VEHICLES.slice(0,10);
+  charts.vehicle=new Chart(document.getElementById('vehicleChart'),{type:'bar',data:{labels:top10.map(v=>v.id),datasets:[{data:top10.map(v=>v.total),backgroundColor:top10.map((_,i)=>i<3?'#E24B4A':i<6?'#e39c30':'#378ADD'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}},scales:{x:{ticks:{color:'#8b949e',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}}}}});
+
+  const byFreq=[...VEHICLES].sort((a,b)=>b.orders-a.orders).slice(0,10);
+  charts.freq=new Chart(document.getElementById('freqChart'),{type:'bar',data:{labels:byFreq.map(v=>v.id),datasets:[{data:byFreq.map(v=>v.orders),backgroundColor:'#a78bfa',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' ครั้ง'}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}}}}});
+
+  document.getElementById('vehicleTableBody').innerHTML=VEHICLES.map((v,i)=>{
+    const rl=v.total>700000?['🔴 สูงมาก','badge-red']:v.total>600000?['🟠 สูง','badge-red']:v.total>500000?['🟡 กลาง','badge-amber']:['🟢 ปกติ','badge-green'];
+    const avg=Math.round(v.total/v.orders);
+    const bar=Math.min(100,Math.round(v.total/805139*100));
+    return `<tr><td class="text-center td-primary">${i+1}</td><td class="td-primary">${v.id}</td><td class="mono">${fmtFull(v.total)}</td><td class="text-center">${v.orders}</td><td class="mono">${fmtFull(avg)}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="risk-bar-wrap"><div class="risk-bar-fill" style="width:${bar}%;background:${i<3?'#E24B4A':i<5?'#e39c30':'#1D9E75'}"></div></div>${bar}%</div></td><td><span class="kpi-badge ${rl[1]}">${rl[0]}</span></td></tr>`;
+  }).join('');
+}
+
+/* ── INSIGHT ── */
+function buildInsight(){
+  charts.saving=new Chart(document.getElementById('savingChart'),{type:'bar',data:{labels:['ปัจจุบัน\nRTF 61%','เป้าหมาย\nRTF 40%','เป้าหมาย\nRTF 30%'],datasets:[{label:'ค่าซ่อม RTF',data:[12350638,9001000,7700000],backgroundColor:'#E24B4A',stack:'s',borderRadius:0},{label:'ค่าซ่อม PM',data:[5617026,5617026,5617026],backgroundColor:'#1D9E75',stack:'s',borderRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtFull(c.raw)}}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}},y:{stacked:true,ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+}
+
+// Init
+buildOverview(ALL_MONTHLY);
+</script>
+</body>
+</html>
