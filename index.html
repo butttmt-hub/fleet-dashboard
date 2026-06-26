@@ -126,6 +126,9 @@ tr:hover td{background:var(--border);}
 .text-center{text-align:center;}
 .mb-20{margin-bottom:20px;}
 .mb-14{margin-bottom:14px;}
+.filter-toggle{padding:5px 14px;border-radius:6px;border:1px solid var(--border2);background:none;color:var(--text-muted);cursor:pointer;font-size:12px;font-family:'IBM Plex Sans Thai',sans-serif;transition:all .15s}
+.filter-toggle:hover{border-color:var(--blue);color:var(--blue)}
+.active-toggle{border-color:var(--blue)!important;background:var(--blue-dim)!important;color:var(--blue)!important;font-weight:600}
 </style>
 </head>
 <body>
@@ -145,10 +148,12 @@ tr:hover td{background:var(--border);}
     <button class="nav-item" onclick="showPage('cost',this)"><span class="nav-icon">💰</span>วิเคราะห์ต้นทุน</button>
     <button class="nav-item" onclick="showPage('fleet',this)"><span class="nav-icon">🚘</span>รายรถ</button>
     <button class="nav-item" onclick="showPage('insight',this)"><span class="nav-icon">💡</span>Insight & แนะนำ</button>
+    <button class="nav-item" onclick="showPage('pettycash',this)"><span class="nav-icon">🧾</span>เงินสดย่อย</button>
   </div>
   <div class="nav-section">
     <div class="nav-label">ข้อมูล</div>
     <button class="nav-item" onclick="alert('ค่าซ่อม.xlsx\n1,669 รายการ | 43 คัน\nม.ค. 2024 – พ.ค. 2026')"><span class="nav-icon">📁</span>ค่าซ่อม.xlsx</button>
+    <button class="nav-item" onclick="alert('เงินสดย่อย ปี 2026\n3,250 รายการ | 81 คัน\nม.ค. – มิ.ย. 2026')"><span class="nav-icon">📁</span>เงินสดย่อย 2026.xlsb</button>
   </div>
   <div class="sidebar-footer">
     <div style="display:flex;align-items:center;gap:6px;"><div class="dot-live"></div><span>อัปเดต: พ.ค. 2026</span></div>
@@ -416,6 +421,114 @@ tr:hover td{background:var(--border);}
   </div>
 
   <!-- ═══ PAGE: INSIGHT ═══ -->
+  <!-- ═══ PETTY CASH PAGE ═══ -->
+  <div id="page-pettycash" class="page-section">
+    <div class="section-header"><span class="section-tag">PETTY CASH</span><span class="section-title">สรุปค่าใช้จ่ายเงินสดย่อย มกราคม – มิถุนายน 2026</span><div class="section-line"></div></div>
+    <!-- Month filter -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+      <span style="color:#8b949e;font-size:12px;margin-right:4px">เดือน:</span>
+      <button id="pcBtn-ALL" class="filter-toggle active-toggle" onclick="setPcMonth('ALL',this)">ทั้งหมด</button>
+      <button id="pcBtn-Jan" class="filter-toggle" onclick="setPcMonth('Jan',this)">ม.ค.</button>
+      <button id="pcBtn-Feb" class="filter-toggle" onclick="setPcMonth('Feb',this)">ก.พ.</button>
+      <button id="pcBtn-Mar" class="filter-toggle" onclick="setPcMonth('Mar',this)">มี.ค.</button>
+      <button id="pcBtn-Apr" class="filter-toggle" onclick="setPcMonth('Apr',this)">เม.ย.</button>
+      <button id="pcBtn-May" class="filter-toggle" onclick="setPcMonth('May',this)">พ.ค.</button>
+      <button id="pcBtn-Jun" class="filter-toggle" onclick="setPcMonth('Jun',this)">มิ.ย.</button>
+    </div>
+    <!-- KPI cards -->
+    <div class="kpi-grid" id="pcKpiGrid"></div>
+    <!-- Monthly + Donut row -->
+    <div class="charts-row mb-20">
+      <div class="chart-card" style="flex:2">
+        <div class="chart-label">ยอดเบิกเงินสดย่อยรายเดือน (บาท)</div>
+        <div style="position:relative;height:240px"><canvas id="pcMonthChart"></canvas></div>
+      </div>
+      <div class="chart-card" style="flex:1">
+        <div class="chart-label">สัดส่วนตามหมวดค่าใช้จ่าย</div>
+        <div style="position:relative;height:240px"><canvas id="pcDonutChart"></canvas></div>
+      </div>
+    </div>
+    <!-- Top vehicles -->
+    <div class="chart-card mb-20">
+      <div class="chart-label">Top 20 รายคัน — ยอดเบิกเงินสดย่อยสะสม (ม.ค.–มิ.ย. 2026)</div>
+      <div style="position:relative;height:340px"><canvas id="pcVehChart"></canvas></div>
+    </div>
+    <!-- Detail table -->
+    <div class="chart-card mb-20">
+      <div class="chart-label">รายละเอียดรายคัน</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>#</th><th>ทะเบียนรถ</th><th>ชื่อ พขร.</th><th>ยอดรวม (บาท)</th><th>สัดส่วน</th></tr></thead>
+          <tbody id="pcTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ค่าตำรวจ deep dive -->
+    <div class="section-header"><span class="section-tag" style="background:rgba(226,75,74,0.15);color:#E24B4A">ค่าตำรวจ</span><span class="section-title">เจาะลึกค่าตำรวจรายคัน — ม.ค.–มิ.ย. 2026</span><div class="section-line"></div></div>
+    <!-- KPI mini -->
+    <div class="kpi-grid" style="margin-bottom:16px">
+      <div class="kpi-card">
+        <div class="kpi-label">ยอดรวมค่าตำรวจ</div>
+        <div class="kpi-value" style="color:#E24B4A">฿21,600</div>
+        <div class="kpi-sub">37 รายการ | 19 คัน</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">เดือนถี่ที่สุด</div>
+        <div class="kpi-value" style="color:#e39c30">พ.ค.</div>
+        <div class="kpi-sub">14 ครั้ง — มากที่สุดในรอบ 6 เดือน</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">โดนบ่อยที่สุด 🔴</div>
+        <div class="kpi-value" style="color:#E24B4A;font-size:1.1rem">96-2579 / 50-3174</div>
+        <div class="kpi-sub">4 ครั้ง | ทินกร / สายันต์</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">คนขับพฤติกรรมเสี่ยง (≥3 ครั้ง)</div>
+        <div class="kpi-value" style="color:#E24B4A">7 คน</div>
+        <div class="kpi-sub">จาก 19 คัน (37%) ต้องติดตาม</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">โดนครั้งเดียว (ปกติ) 🟢</div>
+        <div class="kpi-value" style="color:#1D9E75">11 คัน</div>
+        <div class="kpi-sub">58% ไม่มีพฤติกรรมซ้ำ</div>
+      </div>
+    </div>
+    <!-- Charts row -->
+    <div class="charts-row mb-20">
+      <div class="chart-card" style="flex:1">
+        <div class="chart-label">จำนวนครั้งที่โดนตำรวจรายเดือน <span style="color:#8b949e;font-size:11px">(ตัวชี้วัดพฤติกรรม)</span></div>
+        <div style="position:relative;height:200px"><canvas id="policeMonthChart"></canvas></div>
+      </div>
+      <div class="chart-card" style="flex:1">
+        <div class="chart-label">จำนวนครั้งรายคัน <span style="color:#8b949e;font-size:11px">🔴 ≥3 ครั้ง = เสี่ยง</span></div>
+        <div style="position:relative;height:200px"><canvas id="policeVehChart"></canvas></div>
+      </div>
+    </div>
+    <!-- All transactions -->
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="chart-label" style="margin-bottom:0">รายการค่าตำรวจ <span id="policeTotalLabel">37 รายการ</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span style="color:#8b949e;font-size:12px">เดือน:</span>
+          <button id="pBtn-ALL" class="filter-toggle active-toggle" onclick="setPoliceMonth('ALL',this)">ทั้งหมด</button>
+          <button id="pBtn-ม.ค." class="filter-toggle" onclick="setPoliceMonth('ม.ค.',this)">ม.ค.</button>
+          <button id="pBtn-ก.พ." class="filter-toggle" onclick="setPoliceMonth('ก.พ.',this)">ก.พ.</button>
+          <button id="pBtn-มี.ค." class="filter-toggle" onclick="setPoliceMonth('มี.ค.',this)">มี.ค.</button>
+          <button id="pBtn-เม.ย." class="filter-toggle" onclick="setPoliceMonth('เม.ย.',this)">เม.ย.</button>
+          <button id="pBtn-พ.ค." class="filter-toggle" onclick="setPoliceMonth('พ.ค.',this)">พ.ค.</button>
+          <button id="pBtn-มิ.ย." class="filter-toggle" onclick="setPoliceMonth('มิ.ย.',this)">มิ.ย.</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>วันที่</th><th>ทะเบียนรถ</th><th>ชื่อ พขร.</th><th style="text-align:right">ยอด (บาท)</th><th style="text-align:center">พฤติกรรม</th><th>เดือน</th></tr></thead>
+          <tbody id="policeTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div id="page-insight" class="page-section">
     <div class="section-header"><span class="section-tag">EXECUTIVE SUMMARY</span><span class="section-title">สรุปสำหรับผู้บริหารและข้อเสนอแนะ</span><div class="section-line"></div></div>
     <div class="insight-grid mb-20">
@@ -957,6 +1070,251 @@ function onYearChange(){
   rebuildActive();
 }
 
+/* ══════════════════════════════
+   PETTY CASH DATA (เงินสดย่อย ปี 2026)
+   ══════════════════════════════ */
+const PC_CAT=[
+  {label:'ค่าทางด่วน',         v:806740, color:'#1D9E75'},
+  {label:'ค่าลงของไทวัสดุ',    v:46200,  color:'#4C9EEB'},
+  {label:'ค่าคนงานลงสินค้า',   v:30420,  color:'#e39c30'},
+  {label:'ค่าตำรวจ',           v:21600,  color:'#E24B4A'},
+  {label:'ค่าใช้จ่ายยานพาหนะ', v:14309,  color:'#9b59b6'},
+  {label:'ค่าใช้จ่ายอื่นๆ',    v:3905,   color:'#8b949e'},
+];
+const PC_MONTH={
+  labels:['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.'],
+  values:[142898,162177,173222,148890,170545,125442],
+};
+const PC_VEH=[
+  {id:'99-6758',  drv:'นายวิทยา(ดำ)',      v:45610},
+  {id:'51-4448',  drv:'นายนิพัฒน์',         v:35110},
+  {id:'53-4278',  drv:'นายปิยะพงษ์',        v:34856},
+  {id:'52-1049',  drv:'นายจงจิตร์',          v:33740},
+  {id:'50-4109',  drv:'นายยงค์ยุทธ์',       v:31995},
+  {id:'50-1564',  drv:'นายวิทยา',            v:31755},
+  {id:'50-4108',  drv:'นายประมวล',           v:30885},
+  {id:'96-2579',  drv:'นายทินกร',            v:30805},
+  {id:'50-3172',  drv:'นายอดิศร',            v:29545},
+  {id:'99-2172',  drv:'นายปฎิพัทธ์',        v:28640},
+  {id:'99-5750',  drv:'นายชูชาติ',           v:28525},
+  {id:'51-4447',  drv:'นายสัญญา',            v:28270},
+  {id:'53-4279',  drv:'นายชัยนรินทร์',       v:28215},
+  {id:'99-2174',  drv:'นายทวี',              v:28090},
+  {id:'55-1697',  drv:'นายพงษ์ศักดิ์',       v:27150},
+  {id:'99-2173',  drv:'นายวีรวัฒน์',         v:25855},
+  {id:'51-0416',  drv:'นายผดุงศักดิ์',       v:25710},
+  {id:'99-5751',  drv:'นายธีระพงษ์',         v:25655},
+  {id:'50-3173',  drv:'นายวิเชน',            v:25422},
+  {id:'54-5001',  drv:'นายสุกฤษฎ์',          v:23695},
+];
+const PC_TOTAL=923174;
+const PC_RECORDS=3250;
+const PC_VEHICLES=81;
+const PC_CAT_MONTH={
+  Jan:[124335,10200,5300,1000,1595,468],
+  Feb:[147890,5400,4380,2700,500,1307],
+  Mar:[147575,9600,4640,3800,6117,1490],
+  Apr:[132465,6400,4000,1500,4560,-35],
+  May:[140710,9600,7900,10900,1120,315],
+  Jun:[113765,5000,4200,1700,417,360],
+};
+const PC_VEH_MONTH={
+  Jan:[{id:'50-4108',drv:'นายประมวล',v:7505},{id:'99-6758',drv:'นายวิทยา(ดำ)',v:7310},{id:'51-4448',drv:'นายนิพัฒน์',v:6850},{id:'53-4278',drv:'นายปิยะพงษ์',v:5911},{id:'52-1049',drv:'นายจงจิตร์',v:5575},{id:'51-4447',drv:'นายสัญญา',v:5570},{id:'53-4279',drv:'นายชัยนรินทร์',v:5305},{id:'50-1564',drv:'นายวิทยา',v:5225},{id:'50-3172',drv:'นายอดิศร',v:4885},{id:'99-5750',drv:'นายชูชาติ',v:4825},{id:'51-4449',drv:'นายบัญชา',v:4650},{id:'55-1697',drv:'นายพงษ์ศักดิ์',v:4510},{id:'51-0416',drv:'นายผดุงศักดิ์',v:4470},{id:'99-2172',drv:'นายปฎิพัทธ์',v:4335},{id:'50-4109',drv:'นายยงค์ยุทธ์',v:4205}],
+  Feb:[{id:'99-6758',drv:'นายวิทยา(ดำ)',v:9895},{id:'53-4278',drv:'นายปิยะพงษ์',v:7090},{id:'52-1049',drv:'นายจงจิตร์',v:6955},{id:'50-4109',drv:'นายยงค์ยุทธ์',v:6695},{id:'51-4448',drv:'นายนิพัฒน์',v:6455},{id:'51-4447',drv:'นายสัญญา',v:6320},{id:'50-3172',drv:'นายอดิศร',v:5925},{id:'50-3173',drv:'นายวิเชน',v:5755},{id:'54-5001',drv:'นายสุกฤษฎ์',v:5730},{id:'50-4108',drv:'นายประมวล',v:5600},{id:'53-4279',drv:'นายชัยนรินทร์',v:5460},{id:'99-5750',drv:'นายชูชาติ',v:5440},{id:'55-1697',drv:'นายพงษ์ศักดิ์',v:5340},{id:'96-2579',drv:'นายทินกร',v:5340},{id:'50-3174',drv:'นายสายันต์',v:4405}],
+  Mar:[{id:'99-6758',drv:'นายวิทยา(ดำ)',v:8765},{id:'50-3173',drv:'นายวิเชน',v:7080},{id:'51-4448',drv:'นายนิพัฒน์',v:6795},{id:'51-0416',drv:'นายผดุงศักดิ์',v:6580},{id:'52-3526',drv:'นายวัฒนา',v:6475},{id:'52-1049',drv:'นายจงจิตร์',v:6440},{id:'99-2173',drv:'นายวีรวัฒน์',v:6010},{id:'50-3172',drv:'นายอดิศร',v:5915},{id:'53-4279',drv:'นายชัยนรินทร์',v:5835},{id:'50-4110',drv:'นายไชยวัฒน์',v:5551},{id:'50-1564',drv:'นายวิทยา',v:5500},{id:'99-2174',drv:'นายทวี',v:5470},{id:'55-1697',drv:'นายพงษ์ศักดิ์',v:5440},{id:'50-4108',drv:'นายประมวล',v:5350},{id:'50-4109',drv:'นายยงค์ยุทธ์',v:5300}],
+  Apr:[{id:'99-6758',drv:'นายวิทยา(ดำ)',v:7415},{id:'96-2579',drv:'นายทินกร',v:7075},{id:'50-1564',drv:'นายวิทยา',v:5910},{id:'99-2173',drv:'นายวีรวัฒน์',v:5825},{id:'52-1049',drv:'นายจงจิตร์',v:5815},{id:'50-4109',drv:'นายยงค์ยุทธ์',v:5700},{id:'51-4448',drv:'นายนิพัฒน์',v:5625},{id:'53-4278',drv:'นายปิยะพงษ์',v:5495},{id:'99-2174',drv:'นายทวี',v:5465},{id:'53-4279',drv:'นายชัยนรินทร์',v:5360},{id:'99-2172',drv:'นายปฎิพัทธ์',v:5205},{id:'50-3172',drv:'นายอดิศร',v:4490},{id:'51-4449',drv:'นายบัญชา',v:4480},{id:'55-1697',drv:'นายพงษ์ศักดิ์',v:4290},{id:'51-4447',drv:'นายสัญญา',v:4210}],
+  May:[{id:'96-7670',drv:'นายกิตติพงษ์',v:9265},{id:'99-6758',drv:'นายวิทยา(ดำ)',v:6870},{id:'96-2579',drv:'นายทินกร',v:6490},{id:'99-5751',drv:'นายธีระพงษ์',v:6390},{id:'53-4278',drv:'นายปิยะพงษ์',v:6185},{id:'50-4108',drv:'นายประมวล',v:6160},{id:'50-4109',drv:'นายยงค์ยุทธ์',v:6020},{id:'99-2172',drv:'นายปฎิพัทธ์',v:5770},{id:'50-1564',drv:'นายวิทยา',v:5680},{id:'52-1049',drv:'นายจงจิตร์',v:5655},{id:'99-2174',drv:'นายทวี',v:5585},{id:'55-1697',drv:'นายพงษ์ศักดิ์',v:5460},{id:'50-4110',drv:'นายไชยวัฒน์',v:5430},{id:'99-5750',drv:'นายชูชาติ',v:5310},{id:'52-4730',drv:'นายประหยัด',v:5285}],
+  Jun:[{id:'50-1564',drv:'นายวิทยา',v:5650},{id:'99-6758',drv:'นายวิทยา(ดำ)',v:5355},{id:'96-2579',drv:'นายทินกร',v:5205},{id:'51-0416',drv:'นายผดุงศักดิ์',v:4925},{id:'53-4278',drv:'นายปิยะพงษ์',v:4910},{id:'99-5751',drv:'นายธีระพงษ์',v:4590},{id:'99-5750',drv:'นายชูชาติ',v:4445},{id:'99-2172',drv:'นายปฎิพัทธ์',v:4315},{id:'51-4448',drv:'นายนิพัฒน์',v:4210},{id:'51-4449',drv:'นายบัญชา',v:4200},{id:'50-3172',drv:'นายอดิศร',v:4175},{id:'50-4109',drv:'นายยงค์ยุทธ์',v:4075},{id:'52-3526',drv:'นายวัฒนา',v:4070},{id:'99-2174',drv:'นายทวี',v:3970},{id:'50-4110',drv:'นายไชยวัฒน์',v:3775}],
+};
+const PC_COUNT_MONTH={Jan:504,Feb:567,Mar:621,Apr:507,May:597,Jun:454};
+let pcActiveMonth='ALL';
+
+/* ── ค่าตำรวจ DATA ── */
+const POLICE_MONTH={
+  labels:['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.'],
+  values:[1000,2700,3800,1500,10900,1700]
+};
+const POLICE_VEH=[
+  {id:'96-7670',drv:'นายกิตติพงษ์',cnt:2,v:5500},
+  {id:'54-5001',drv:'นายสุกฤษฎ์',cnt:3,v:2000},
+  {id:'92-3556',drv:'นายประเสริฐ',cnt:3,v:2000},
+  {id:'96-2579',drv:'นายทินกร',cnt:4,v:1800},
+  {id:'50-4109',drv:'นายยงค์ยุทธ์',cnt:3,v:1700},
+  {id:'50-3174',drv:'นายสายันต์',cnt:4,v:1700},
+  {id:'97-2833',drv:'นายวิษณุ',cnt:3,v:1700},
+  {id:'91-3191',drv:'นายเอกรินทร์',cnt:3,v:700},
+  {id:'50-3172',drv:'นายอดิศร',cnt:1,v:500},
+  {id:'50-4110',drv:'นายอนุรักษ์',cnt:1,v:500},
+  {id:'99-2174',drv:'นายทวี',cnt:1,v:500},
+  {id:'52-4730',drv:'นายประหยัด',cnt:1,v:500},
+  {id:'99-2173',drv:'นายวีรวัฒน์',cnt:1,v:500},
+  {id:'72-4700',drv:'นายอาทิตย์',cnt:1,v:500},
+  {id:'1ฒล-6202',drv:'นายสถิตย์',cnt:1,v:500},
+  {id:'51-4447',drv:'นายสัญญา',cnt:1,v:400},
+  {id:'99-6758',drv:'นายวิทยา(ดำ)',cnt:2,v:300},
+  {id:'1ฒว-1720',drv:'นายอนาวิล',cnt:1,v:200},
+  {id:'1ฒล-6201',drv:'นายนฤพันธ์',cnt:1,v:100},
+];
+const POLICE_ROWS=[
+  {d:'22/01/2026',veh:'50-3172',drv:'นายอดิศร',v:500,m:'ม.ค.'},
+  {d:'22/01/2026',veh:'50-4109',drv:'นายยงค์ยุทธ์',v:500,m:'ม.ค.'},
+  {d:'19/02/2026',veh:'99-6758',drv:'นายวิทยา(ดำ)',v:100,m:'ก.พ.'},
+  {d:'24/02/2026',veh:'91-3191',drv:'นายเอกรินทร์',v:200,m:'ก.พ.'},
+  {d:'27/02/2026',veh:'51-4447',drv:'นายสัญญา',v:400,m:'ก.พ.'},
+  {d:'27/02/2026',veh:'50-4110',drv:'นายอนุรักษ์',v:500,m:'ก.พ.'},
+  {d:'28/02/2026',veh:'54-5001',drv:'นายสุกฤษฎ์',v:1000,m:'ก.พ.'},
+  {d:'28/02/2026',veh:'92-3556',drv:'นายประเสริฐ',v:500,m:'ก.พ.'},
+  {d:'02/03/2026',veh:'50-3174',drv:'นายสายันต์',v:200,m:'มี.ค.'},
+  {d:'04/03/2026',veh:'50-4109',drv:'นายยงค์ยุทธ์',v:1000,m:'มี.ค.'},
+  {d:'05/03/2026',veh:'50-3174',drv:'นายสายันต์',v:500,m:'มี.ค.'},
+  {d:'05/03/2026',veh:'92-3556',drv:'นายประเสริฐ',v:1000,m:'มี.ค.'},
+  {d:'05/03/2026',veh:'97-2833',drv:'นายวิษณุ',v:200,m:'มี.ค.'},
+  {d:'06/03/2026',veh:'96-7670',drv:'นายกิตติพงษ์',v:500,m:'มี.ค.'},
+  {d:'17/03/2026',veh:'1ฒล-6201',drv:'นายนฤพันธ์',v:100,m:'มี.ค.'},
+  {d:'18/03/2026',veh:'1ฒว-1720',drv:'นายอนาวิล',v:200,m:'มี.ค.'},
+  {d:'18/03/2026',veh:'96-2579',drv:'นายทินกร',v:100,m:'มี.ค.'},
+  {d:'02/04/2026',veh:'97-2833',drv:'นายวิษณุ',v:1000,m:'เม.ย.'},
+  {d:'20/04/2026',veh:'99-6758',drv:'นายวิทยา(ดำ)',v:200,m:'เม.ย.'},
+  {d:'21/04/2026',veh:'91-3191',drv:'นายเอกรินทร์',v:300,m:'เม.ย.'},
+  {d:'05/05/2026',veh:'50-4109',drv:'นายยงค์ยุทธ์',v:200,m:'พ.ค.'},
+  {d:'08/05/2026',veh:'96-2579',drv:'นายทินกร',v:500,m:'พ.ค.'},
+  {d:'08/05/2026',veh:'91-3191',drv:'นายเอกรินทร์',v:200,m:'พ.ค.'},
+  {d:'12/05/2026',veh:'97-2833',drv:'นายวิษณุ',v:500,m:'พ.ค.'},
+  {d:'12/05/2026',veh:'99-2174',drv:'นายทวี',v:500,m:'พ.ค.'},
+  {d:'13/05/2026',veh:'50-3174',drv:'นายสายันต์',v:500,m:'พ.ค.'},
+  {d:'14/05/2026',veh:'52-4730',drv:'นายประหยัด',v:500,m:'พ.ค.'},
+  {d:'15/05/2026',veh:'50-3174',drv:'นายสายันต์',v:500,m:'พ.ค.'},
+  {d:'15/05/2026',veh:'99-2173',drv:'นายวีรวัฒน์',v:500,m:'พ.ค.'},
+  {d:'18/05/2026',veh:'92-3556',drv:'นายประเสริฐ',v:500,m:'พ.ค.'},
+  {d:'18/05/2026',veh:'96-2579',drv:'นายทินกร',v:1000,m:'พ.ค.'},
+  {d:'18/05/2026',veh:'54-5001',drv:'นายสุกฤษฎ์',v:500,m:'พ.ค.'},
+  {d:'28/05/2026',veh:'96-7670',drv:'นายกิตติพงษ์',v:5000,m:'พ.ค.'},
+  {d:'05/06/2026',veh:'72-4700',drv:'นายอาทิตย์',v:500,m:'มิ.ย.'},
+  {d:'17/06/2026',veh:'54-5001',drv:'นายสุกฤษฎ์',v:500,m:'มิ.ย.'},
+  {d:'22/06/2026',veh:'96-2579',drv:'นายทินกร',v:200,m:'มิ.ย.'},
+  {d:'24/06/2026',veh:'1ฒล-6202',drv:'นายสถิตย์',v:500,m:'มิ.ย.'},
+];
+
+
+/* ── PETTY CASH ── */
+function setPcMonth(m,btn){
+  pcActiveMonth=m;
+  document.querySelectorAll('[id^="pcBtn-"]').forEach(b=>b.classList.remove('active-toggle'));
+  btn.classList.add('active-toggle');
+  buildPettyCash();
+}
+function buildPettyCash(){
+  const m=pcActiveMonth, isAll=m==='ALL';
+  const MLABEL={Jan:'ม.ค.',Feb:'ก.พ.',Mar:'มี.ค.',Apr:'เม.ย.',May:'พ.ค.',Jun:'มิ.ย.'};
+  const catVals=isAll?PC_CAT.map(c=>c.v):PC_CAT_MONTH[m];
+  const total=catVals.reduce((s,v)=>s+v,0);
+  const vehs=isAll?PC_VEH:PC_VEH_MONTH[m];
+  const count=isAll?PC_RECORDS:PC_COUNT_MONTH[m];
+  const topVeh=vehs[0];
+  const maxMonthVal=Math.max(...PC_MONTH.values);
+  const maxMonthIdx=PC_MONTH.values.indexOf(maxMonthVal);
+  document.getElementById('pcKpiGrid').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">ยอดรวม${isAll?' ม.ค.–มิ.ย. 2026':' '+MLABEL[m]+' 2026'}</div>
+      <div class="kpi-value" style="color:#4C9EEB">${fmtFull(total)}</div>
+      <div class="kpi-sub">${count.toLocaleString()} รายการ${isAll?' | 81 คัน':''}</div></div>
+    ${isAll?`<div class="kpi-card"><div class="kpi-label">เฉลี่ยต่อเดือน</div>
+      <div class="kpi-value" style="color:#1D9E75">${fmtFull(Math.round(PC_TOTAL/6))}</div>
+      <div class="kpi-sub">6 เดือน (ม.ค.–มิ.ย.)</div></div>
+    <div class="kpi-card"><div class="kpi-label">เดือนสูงสุด</div>
+      <div class="kpi-value" style="color:#e39c30">${PC_MONTH.labels[maxMonthIdx]}</div>
+      <div class="kpi-sub">${fmtFull(maxMonthVal)} บาท</div></div>`
+    :`<div class="kpi-card"><div class="kpi-label">สัดส่วนจากยอดรวมทั้งปี</div>
+      <div class="kpi-value" style="color:#e39c30">${(total/PC_TOTAL*100).toFixed(1)}%</div>
+      <div class="kpi-sub">จากยอดรวม ฿${PC_TOTAL.toLocaleString()}</div></div>`}
+    <div class="kpi-card"><div class="kpi-label">รายคันสูงสุด</div>
+      <div class="kpi-value" style="color:#E24B4A;font-size:1.3rem">${topVeh.id}</div>
+      <div class="kpi-sub">${fmtFull(topVeh.v)} | ${topVeh.drv}</div></div>
+    <div class="kpi-card"><div class="kpi-label">หมวดใหญ่สุด</div>
+      <div class="kpi-value" style="color:#1D9E75;font-size:1.1rem">ค่าทางด่วน</div>
+      <div class="kpi-sub">${fmtFull(catVals[0])} (${(catVals[0]/total*100).toFixed(1)}%)</div></div>
+  `;
+  const barColors=PC_MONTH.values.map((_,i)=>{
+    if(isAll) return i===maxMonthIdx?'#4C9EEB':'rgba(76,158,235,0.5)';
+    return Object.keys(MLABEL)[i]===m?'#4C9EEB':'rgba(76,158,235,0.25)';
+  });
+  if(charts.pcMonth) charts.pcMonth.destroy();
+  charts.pcMonth=new Chart(document.getElementById('pcMonthChart'),{type:'bar',
+    data:{labels:PC_MONTH.labels,datasets:[{label:'ยอดเบิก',data:PC_MONTH.values,backgroundColor:barColors,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'฿'+c.raw.toLocaleString()}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  if(charts.pcDonut) charts.pcDonut.destroy();
+  charts.pcDonut=new Chart(document.getElementById('pcDonutChart'),{type:'doughnut',
+    data:{labels:PC_CAT.map(c=>c.label),datasets:[{data:catVals,backgroundColor:PC_CAT.map(c=>c.color),borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:10},boxWidth:10,padding:6}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ฿${c.raw.toLocaleString()} (${(c.raw/total*100).toFixed(1)}%)`}}}}
+  });
+  if(charts.pcVeh) charts.pcVeh.destroy();
+  charts.pcVeh=new Chart(document.getElementById('pcVehChart'),{type:'bar',
+    data:{labels:vehs.map(v=>v.id),datasets:[{label:'ยอดเบิก',data:vehs.map(v=>v.v),backgroundColor:'rgba(76,158,235,0.7)',borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'฿'+c.raw.toLocaleString()}}},
+      scales:{x:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#cdd9e5',font:{size:11}},grid:{display:false}}}}
+  });
+  document.getElementById('pcTableBody').innerHTML=vehs.map((v,i)=>`
+    <tr><td>${i+1}</td><td class="td-primary">${v.id}</td><td>${v.drv}</td>
+    <td style="text-align:right;font-weight:600">฿${v.v.toLocaleString()}</td>
+    <td style="text-align:right">${(v.v/total*100).toFixed(1)}%</td></tr>`).join('');
+  buildPoliceCharts();
+}
+
+/* ── POLICE ── */
+let policeActiveMonth='ALL';
+function setPoliceMonth(m,btn){
+  policeActiveMonth=m;
+  document.querySelectorAll('[id^="pBtn-"]').forEach(b=>b.classList.remove('active-toggle'));
+  btn.classList.add('active-toggle');
+  renderPoliceTable();
+}
+function renderPoliceTable(){
+  const m=policeActiveMonth;
+  const filtered=m==='ALL'?POLICE_ROWS:POLICE_ROWS.filter(r=>r.m===m);
+  const total=filtered.reduce((s,r)=>s+r.v,0);
+  document.getElementById('policeTotalLabel').textContent=filtered.length+' รายการ'+(m!=='ALL'?' | ฿'+total.toLocaleString():'');
+  document.getElementById('policeTableBody').innerHTML=filtered.map(r=>{
+    const veh=POLICE_VEH.find(v=>v.id===r.veh), cnt=veh?veh.cnt:1;
+    const risk=cnt>=3?'🔴':cnt>=2?'🟡':'🟢';
+    return `<tr style="${cnt>=3?'background:rgba(226,75,74,0.07)':cnt>=2?'background:rgba(227,156,48,0.06)':''}">
+      <td>${r.d}</td><td class="td-primary">${r.veh}</td><td>${r.drv}</td>
+      <td style="text-align:right;font-weight:600;color:${r.v>=1000?'#E24B4A':'inherit'}">฿${r.v.toLocaleString()}</td>
+      <td style="text-align:center">${risk} ${cnt} ครั้ง</td>
+      <td><span class="kpi-badge" style="background:rgba(76,158,235,0.15);color:#4C9EEB;font-size:10px">${r.m}</span></td>
+    </tr>`;
+  }).join('');
+}
+function buildPoliceCharts(){
+  const CNT_BY_MONTH=[2,8,9,3,14,4];
+  const maxC=Math.max(...CNT_BY_MONTH);
+  if(charts.policeMonth) charts.policeMonth.destroy();
+  charts.policeMonth=new Chart(document.getElementById('policeMonthChart'),{type:'bar',
+    data:{labels:['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.'],datasets:[{label:'จำนวนครั้ง',
+      data:CNT_BY_MONTH,backgroundColor:CNT_BY_MONTH.map(v=>v===maxC?'#E24B4A':'rgba(226,75,74,0.4)'),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' ครั้ง'}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',stepSize:1},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  const vehSorted=[...POLICE_VEH].sort((a,b)=>b.cnt-a.cnt);
+  if(charts.policeVeh) charts.policeVeh.destroy();
+  charts.policeVeh=new Chart(document.getElementById('policeVehChart'),{type:'bar',
+    data:{labels:vehSorted.map(v=>v.id),datasets:[{label:'ครั้ง',
+      data:vehSorted.map(v=>v.cnt),backgroundColor:vehSorted.map(v=>v.cnt>=3?'#E24B4A':v.cnt>=2?'#e39c30':'rgba(139,148,158,0.5)'),borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=vehSorted[c.dataIndex];return [c.raw+' ครั้ง | ฿'+v.v.toLocaleString(),'พขร.: '+v.drv];}}}},
+      scales:{x:{ticks:{color:'#8b949e',stepSize:1},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#cdd9e5',font:{size:10}},grid:{display:false}}}}
+  });
+  policeActiveMonth='ALL';
+  document.querySelectorAll('[id^="pBtn-"]').forEach(b=>b.classList.remove('active-toggle'));
+  const ab=document.getElementById('pBtn-ALL'); if(ab) ab.classList.add('active-toggle');
+  renderPoliceTable();
+}
+
+/* ── NAV ── */
 function showPage(id,btn){
   document.querySelectorAll('.page-section').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -968,12 +1326,12 @@ function showPage(id,btn){
     cost:['Cost Analysis','วิเคราะห์ต้นทุนค่าซ่อมเชิงลึก'],
     fleet:['Fleet Intelligence','ข้อมูลและ Risk Ranking รายคัน'],
     insight:['Insight & Recommendations','สรุปสำหรับผู้บริหาร และแผนการปรับปรุง 90 วัน'],
+    pettycash:['Petty Cash','ค่าใช้จ่ายเงินสดย่อย มกราคม – มิถุนายน 2026'],
   };
   document.getElementById('pageTitle').textContent=titles[id][0];
   document.getElementById('pageSub').textContent=titles[id][1];
   rebuildActive();
 }
-
 function rebuildActive(){
   const active=document.querySelector('.page-section.active');
   if(!active) return;
@@ -985,157 +1343,321 @@ function rebuildActive(){
   else if(id==='cost') buildCost(rows);
   else if(id==='fleet') buildFleet();
   else if(id==='insight') buildInsight();
+  else if(id==='pettycash') buildPettyCash();
 }
 
 /* ── OVERVIEW ── */
 function buildOverview(rows){
   const total=rows.reduce((s,r)=>s+r.v,0);
-  const ratio=total/18002430;
-  const count=Math.max(1,Math.round(1669*ratio));
-  const avg=total/count;
-
-  document.getElementById('kpiGrid').innerHTML=[
-    {label:'ค่าซ่อมรวม',icon:'💰',value:fmt(total),meta:'มูลค่าทั้งหมด',color:'var(--blue)'},
-    {label:'จำนวนรายการ',icon:'📋',value:count.toLocaleString(),meta:'ใบสั่งซ่อม',color:'var(--green)'},
-    {label:'ค่าเฉลี่ย/รายการ',icon:'📊',value:fmt(avg),meta:'ต่อใบสั่งซ่อม',color:'var(--amber)'},
-    {label:'ค่าเฉลี่ย/คัน',icon:'🚛',value:fmt(total/43),meta:'Fleet 43 คัน',color:'var(--purple)'},
-  ].map(k=>`<div class="kpi-card"><div class="kpi-accent" style="background:${k.color}"></div><div class="kpi-label"><span class="kpi-icon">${k.icon}</span>${k.label}</div><div class="kpi-value">${k.value}</div><div class="kpi-meta"><span style="color:var(--text-dim);font-size:11px">${k.meta}</span></div></div>`).join('');
-
-  const avgVal=total/rows.length;
-  document.getElementById('trendAvgBadge').textContent='เฉลี่ย '+fmt(avgVal)+'/เดือน';
-
-  if(rows.length===1){
-    const gr=document.getElementById('fGroup').value;
-    const grps=gr==='all'?GROUPS:[gr];
-    charts.trend=new Chart(document.getElementById('trendChart'),{type:'bar',data:{labels:grps,datasets:[{data:grps.map(g=>rows[0].g[g]||0),backgroundColor:grps.map(g=>COLORS[g]),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-  } else {
-    charts.trend=new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:rows.map(r=>labelOf(r.ym)),datasets:[{label:'ค่าซ่อม',data:rows.map(r=>r.v),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#378ADD',fill:true,tension:0.35},{label:'เฉลี่ย',data:rows.map(()=>avgVal),borderColor:'#E24B4A',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:12},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-  }
-
-  const gr=document.getElementById('fGroup').value;
-  const grps=gr==='all'?GROUPS:[gr];
-  const totals={};grps.forEach(g=>{totals[g]=rows.reduce((s,r)=>s+(r.g[g]||0),0);});
-  const totSum=Object.values(totals).reduce((s,v)=>s+v,0);
-  document.getElementById('donutLegend').innerHTML=grps.map(g=>`<span class="legend-item"><span class="legend-box" style="background:${COLORS[g]}"></span>${g} ${totSum?((totals[g]/totSum)*100).toFixed(1):0}%</span>`).join('');
-  charts.donut=new Chart(document.getElementById('donutChart'),{type:'doughnut',data:{labels:grps,datasets:[{data:grps.map(g=>totals[g]),backgroundColor:grps.map(g=>COLORS[g]),borderWidth:3,borderColor:'#161b22'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}}}});
-
-  const pTotal=PRIORITY.reduce((s,p)=>s+p.v,0);
-  document.getElementById('prioritySection').innerHTML=PRIORITY.map(p=>`<div class="priority-item"><div class="pi-label">${p.p}</div><div class="pi-bar-bg"><div class="pi-bar" style="width:${(p.v/pTotal*100).toFixed(0)}%;background:${p.color}"></div></div><div class="pi-val">${fmt(p.v*ratio)}</div><div class="pi-count">${Math.max(1,Math.round(p.c*ratio)).toLocaleString()} รายการ</div></div>`).join('');
-
-  charts.pm=new Chart(document.getElementById('pmChart'),{type:'doughnut',data:{labels:['RTF','PM'],datasets:[{data:[12350638,5617026],backgroundColor:['#E24B4A','#1D9E75'],borderWidth:3,borderColor:'#161b22'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}}}});
-
-  document.getElementById('stackLegend').innerHTML=GROUPS.map(g=>`<span class="legend-item"><span class="legend-box" style="background:${COLORS[g]}"></span>${g}</span>`).join('');
-  charts.stack=new Chart(document.getElementById('stackChart'),{type:'bar',data:{labels:rows.map(r=>labelOf(r.ym)),datasets:GROUPS.map(g=>({label:g,data:rows.map(r=>r.g[g]||0),backgroundColor:COLORS[g],borderRadius:2,stack:'s'}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtFull(c.raw)}}},scales:{x:{stacked:true,ticks:{color:'#8b949e',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:12},grid:{display:false}},y:{stacked:true,ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-}
-
-/* ── RTF COMPARE ── */
-function pct(a,b){return b===0?0:((b-a)/a*100);}
-function arrow(v){return v<0?'▼':'▲';}
-function signColor(v){return v<0?'var(--green)':'var(--red)';}
-
-function buildRtfCompare(){
-  const baseYr=parseInt(document.getElementById('rtfBaseYear').value);
-  const cmpYr=parseInt(document.getElementById('rtfCmpYear').value);
-  const base=RTF_TOTAL[baseYr],cmp=RTF_TOTAL[cmpYr];
-  const is2026cmp=cmpYr===2026;
-  const cmpMonths=is2026cmp?5:12;
-  const baseMonths=baseYr===2026?5:12;
-  const cmpSum=is2026cmp?Math.round(cmp.sum/5*baseMonths):cmp.sum;
-  const cmpCount=is2026cmp?Math.round(cmp.count/5*baseMonths):cmp.count;
-  const diffSum=pct(base.sum,cmpSum);
-  const diffCount=pct(base.count,cmpCount);
-  const diffMean=pct(base.mean,cmp.mean);
-  // RTF rate after reclassification (เปลี่ยนยาง→PM, ปะยาง→RTF)
-  const rateMap={2024:35.4,2025:41.6,2026:38.4};
-  const diffRate=pct(rateMap[baseYr],rateMap[cmpYr]);
-  const note2026=is2026cmp?`<br><span style="font-size:10px;color:var(--text-dim)">* 2026: ปรับเป็นฐานปีเต็ม</span>`:'';
-
-  document.getElementById('rtfDiffCards').innerHTML=[
-    {label:'มูลค่า RTF (บาท)',baseVal:fmtFull(base.sum),cmpVal:fmtFull(cmp.sum),diff:diffSum,note:'เปรียบเทียบปีต่อปี'+note2026},
-    {label:'จำนวนรายการ RTF',baseVal:base.count+' ครั้ง',cmpVal:cmp.count+' ครั้ง',diff:diffCount,note:'เปรียบเทียบปีต่อปี'+note2026},
-    {label:'ค่าเฉลี่ย/รายการ',baseVal:fmtFull(base.mean),cmpVal:fmtFull(cmp.mean),diff:diffMean,note:'ต้นทุน RTF เฉลี่ยต่อครั้ง'},
-    {label:'สัดส่วน RTF %',baseVal:rateMap[baseYr]+'%',cmpVal:rateMap[cmpYr]+'%',diff:diffRate,note:'RTF/(PM+RTF)'},
-  ].map(c=>`<div class="kpi-card" style="position:relative;overflow:hidden"><div class="kpi-accent" style="background:${signColor(c.diff)}"></div><div class="kpi-label" style="font-size:11px">${c.label}</div><div style="display:flex;align-items:flex-end;gap:10px;margin:6px 0 4px"><div style="font-size:11px;color:var(--text-dim)">ปี ${baseYr}<br><span style="font-size:15px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace">${c.baseVal}</span></div><div style="font-size:18px;color:var(--text-dim);margin-bottom:2px">→</div><div style="font-size:11px;color:var(--text-dim)">ปี ${cmpYr}<br><span style="font-size:15px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace">${c.cmpVal}</span></div></div><div style="font-size:20px;font-weight:700;color:${signColor(c.diff)};font-family:'IBM Plex Mono',monospace;margin-bottom:3px">${arrow(c.diff)} ${Math.abs(c.diff).toFixed(1)}%</div><div style="font-size:10px;color:var(--text-dim)">${c.note}</div></div>`).join('');
-
-  const mthLabels=MONTHS_TH.slice(0,Math.max(baseMonths,cmpMonths));
-  if(charts.rtfMonthly) charts.rtfMonthly.destroy();
-  charts.rtfMonthly=new Chart(document.getElementById('rtfMonthlyChart'),{type:'line',data:{labels:mthLabels,datasets:[{label:'ปี '+baseYr,data:RTF_MONTHLY[baseYr].c.slice(0,baseMonths),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#378ADD',fill:false,tension:0.3},{label:'ปี '+cmpYr,data:RTF_MONTHLY[cmpYr].c.slice(0,cmpMonths),borderColor:'#E24B4A',backgroundColor:'rgba(226,75,74,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#E24B4A',fill:false,tension:0.3,borderDash:is2026cmp?[6,3]:[]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' ครั้ง'}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>v+' ครั้ง'},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-  document.getElementById('rtfBarTitle').textContent=`RTF รายเดือน — ปี ${baseYr} vs ${cmpYr}`;
-
-  if(charts.rtfCostMonthly) charts.rtfCostMonthly.destroy();
-  charts.rtfCostMonthly=new Chart(document.getElementById('rtfCostMonthlyChart'),{type:'bar',data:{labels:mthLabels,datasets:[{label:'ปี '+baseYr,data:RTF_MONTHLY[baseYr].v.slice(0,baseMonths),backgroundColor:'rgba(55,138,221,0.7)',borderRadius:3},{label:'ปี '+cmpYr,data:RTF_MONTHLY[cmpYr].v.slice(0,cmpMonths),backgroundColor:'rgba(226,75,74,0.7)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtFull(c.raw)}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-  document.getElementById('rtfCostBarTitle').textContent=`มูลค่า RTF รายเดือน — ปี ${baseYr} vs ${cmpYr}`;
-
-  const grps=GROUPS;
-  document.getElementById('rtfGroupLegend').innerHTML=[{label:'ปี '+baseYr,color:'#378ADD'},{label:'ปี '+cmpYr,color:'#E24B4A'}].map(l=>`<span class="legend-item"><span class="legend-box" style="background:${l.color}"></span>${l.label}</span>`).join('');
-  if(charts.rtfGroup) charts.rtfGroup.destroy();
-  charts.rtfGroup=new Chart(document.getElementById('rtfGroupChart'),{type:'bar',data:{labels:grps,datasets:[{label:'ปี '+baseYr,data:grps.map(g=>RTF_BY_GROUP[baseYr][g]||0),backgroundColor:'rgba(55,138,221,0.75)',borderRadius:4},{label:'ปี '+cmpYr,data:grps.map(g=>RTF_BY_GROUP[cmpYr][g]||0),backgroundColor:'rgba(226,75,74,0.75)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtFull(c.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-
-  if(charts.rtfRepeat) charts.rtfRepeat.destroy();
-  charts.rtfRepeat=new Chart(document.getElementById('rtfRepeatChart'),{type:'bar',data:{labels:RTF_REPEAT.map(v=>v.id),datasets:[{label:'ครั้ง RTF ซ้ำ',data:RTF_REPEAT.map(v=>v.count),backgroundColor:RTF_REPEAT.map((_,i)=>i<3?'#E24B4A':i<6?'#e39c30':'#378ADD'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' ครั้ง RTF | ฿'+RTF_REPEAT[c.dataIndex].total.toLocaleString()}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10},callback:v=>v+' ครั้ง'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}}}}});
-
-  const savedCost=Math.abs(base.sum-(is2026cmp?cmp.sum/5*12:cmp.sum));
-  const groupChanges=grps.map(g=>({g,ch:pct(RTF_BY_GROUP[baseYr][g]||0,RTF_BY_GROUP[cmpYr][g]||0)})).sort((a,b)=>Math.abs(b.ch)-Math.abs(a.ch));
-  const topChange=groupChanges[0];
-  document.getElementById('rtfInsightText').innerHTML=`<strong style="color:var(--text);font-size:14px">📊 สรุปการเปรียบเทียบ ปี ${baseYr} → ปี ${cmpYr}</strong><br><br>${diffCount<0?`✅ <strong style="color:var(--green)">จำนวน RTF ลดลง ${Math.abs(diffCount).toFixed(1)}%</strong> (จาก ${base.count} → ${cmpYr===2026?cmp.count+' ครั้ง (5 เดือน)':cmpCount+' ครั้ง'})`:
-    `🔴 <strong style="color:var(--red)">จำนวน RTF เพิ่มขึ้น ${Math.abs(diffCount).toFixed(1)}%</strong> (จาก ${base.count} → ${cmpCount} ครั้ง)`}<br>${diffSum<0?`✅ <strong style="color:var(--green)">มูลค่า RTF ลดลง ${Math.abs(diffSum).toFixed(1)}%</strong> ประหยัดได้ประมาณ <strong style="color:var(--green)">฿${Math.round(savedCost).toLocaleString()}</strong>`:
-    `🔴 <strong style="color:var(--red)">มูลค่า RTF เพิ่มขึ้น ${Math.abs(diffSum).toFixed(1)}%</strong> เพิ่มขึ้น ฿${Math.round(savedCost).toLocaleString()}`}<br>${diffMean<0?`✅ ต้นทุน RTF เฉลี่ยต่อครั้ง <strong style="color:var(--green)">ถูกลง ${Math.abs(diffMean).toFixed(1)}%</strong>`:
-    `⚠️ ต้นทุน RTF เฉลี่ยต่อครั้ง <strong style="color:var(--amber)">แพงขึ้น ${Math.abs(diffMean).toFixed(1)}%</strong>`}<br>📌 หมวดที่เปลี่ยนแปลงมากสุด: <strong style="color:var(--text)">${topChange.g}</strong> ${topChange.ch<0?`<span style="color:var(--green)">▼ ลด ${Math.abs(topChange.ch).toFixed(1)}%</span>`:`<span style="color:var(--red)">▲ เพิ่ม ${Math.abs(topChange.ch).toFixed(1)}%</span>`}<br>🔁 V1-923556 ยังคงมี RTF ซ้ำสูงสุด 48 ครั้ง — ควรพิจารณา Overhaul หรือเปลี่ยนทดแทน`;
+  const pm=PRIORITY[0], rtf=PRIORITY[1];
+  const totalAll=18037196;
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi-card"><div class="kpi-accent" style="background:var(--blue)"></div>
+      <div class="kpi-label"><span class="kpi-icon">🚛</span>รถทั้งหมด</div>
+      <div class="kpi-value">43</div>
+      <div class="kpi-meta"><span class="kpi-badge badge-blue">Fleet Size</span></div></div>
+    <div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div>
+      <div class="kpi-label"><span class="kpi-icon">🔧</span>PM</div>
+      <div class="kpi-value">${(pm.v/totalAll*100).toFixed(0)}%</div>
+      <div class="kpi-meta"><span class="kpi-badge badge-green">${pm.c.toLocaleString()} รายการ</span></div></div>
+    <div class="kpi-card"><div class="kpi-accent" style="background:var(--red)"></div>
+      <div class="kpi-label"><span class="kpi-icon">⚡</span>RTF</div>
+      <div class="kpi-value">${(rtf.v/totalAll*100).toFixed(0)}%</div>
+      <div class="kpi-meta"><span class="kpi-badge badge-red">${rtf.c.toLocaleString()} รายการ</span></div></div>
+    <div class="kpi-card"><div class="kpi-accent" style="background:var(--amber)"></div>
+      <div class="kpi-label"><span class="kpi-icon">💰</span>ต้นทุนรวม</div>
+      <div class="kpi-value"><sup>฿</sup>${fmt(total)}</div>
+      <div class="kpi-meta"><span class="kpi-badge badge-amber">${rows.length} เดือน</span></div></div>
+    <div class="kpi-card"><div class="kpi-accent" style="background:var(--purple)"></div>
+      <div class="kpi-label"><span class="kpi-icon">📋</span>รายการซ่อม</div>
+      <div class="kpi-value">1,669</div>
+      <div class="kpi-meta"><span class="kpi-badge">ม.ค.24–พ.ค.26</span></div></div>
+  `;
+  // Trend chart
+  const avg=total/rows.length;
+  document.getElementById('trendAvgBadge').textContent='เฉลี่ย '+fmt(avg)+'/เดือน';
+  if(charts.trend) charts.trend.destroy();
+  charts.trend=new Chart(document.getElementById('trendChart'),{type:'line',
+    data:{labels:rows.map(r=>r.ym.slice(5)+'/'+r.ym.slice(2,4)),
+      datasets:[
+        {label:'ค่าซ่อม',data:rows.map(r=>r.v),borderColor:'#4C9EEB',backgroundColor:'rgba(76,158,235,0.1)',fill:true,tension:0.3,pointRadius:2,borderWidth:2},
+        {label:'เฉลี่ย',data:rows.map(()=>avg),borderColor:'rgba(227,156,48,0.6)',borderDash:[5,3],pointRadius:0,borderWidth:1.5}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:10}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+c.raw.toLocaleString()}}},
+      scales:{x:{ticks:{color:'#8b949e',font:{size:9},maxRotation:45},grid:{display:false}},
+        y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  // Donut by group
+  const grpTot={ยาง:0,เครื่องยนต์:0,อื่นๆ:0,ช่วงล่าง:0};
+  rows.forEach(r=>Object.keys(r.g).forEach(k=>{if(grpTot[k]!==undefined)grpTot[k]+=r.g[k];}));
+  const grpColors={ยาง:'#E24B4A',เครื่องยนต์:'#4C9EEB',อื่นๆ:'#e39c30',ช่วงล่าง:'#1D9E75'};
+  const grpKeys=Object.keys(grpTot);
+  const grpVals=grpKeys.map(k=>grpTot[k]);
+  const grpSum=grpVals.reduce((a,b)=>a+b,0);
+  document.getElementById('donutLegend').innerHTML=grpKeys.map((k,i)=>
+    `<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#8b949e">
+      <span style="width:9px;height:9px;border-radius:50%;background:${grpColors[k]};flex-shrink:0"></span>${k} ${(grpVals[i]/grpSum*100).toFixed(0)}%</span>`).join('');
+  if(charts.donut) charts.donut.destroy();
+  charts.donut=new Chart(document.getElementById('donutChart'),{type:'doughnut',
+    data:{labels:grpKeys,datasets:[{data:grpVals,backgroundColor:grpKeys.map(k=>grpColors[k]),borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ฿${c.raw.toLocaleString()} (${(c.raw/grpSum*100).toFixed(1)}%)`}}}}
+  });
+  // PM vs RTF bars
+  document.getElementById('prioritySection').innerHTML=PRIORITY.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="font-size:12px;color:#8b949e;width:160px;flex-shrink:0">${p.p}</div>
+      <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden">
+        <div style="height:100%;background:${p.color};border-radius:4px;width:${(p.v/totalAll*100).toFixed(1)}%"></div>
+      </div>
+      <div style="font-size:11px;color:#8b949e;width:55px;text-align:right">${fmt(p.v)}</div>
+      <div style="font-size:11px;color:${p.color};width:38px;text-align:right;font-weight:600">${(p.v/totalAll*100).toFixed(1)}%</div>
+    </div>`).join('');
+  if(charts.pm) charts.pm.destroy();
+  charts.pm=new Chart(document.getElementById('pmChart'),{type:'bar',
+    data:{labels:PRIORITY.map(p=>p.p.split(' ')[0]+' '+p.p.split(' ')[1]||''),
+      datasets:[
+        {label:'มูลค่า (฿)',data:PRIORITY.map(p=>p.v),backgroundColor:PRIORITY.map(p=>p.color),borderRadius:4},
+        {label:'จำนวน (ครั้ง)',data:PRIORITY.map(p=>p.c),backgroundColor:PRIORITY.map(p=>p.color+'99'),borderRadius:4}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.datasetIndex===0?'฿'+c.raw.toLocaleString():c.raw.toLocaleString()+' ครั้ง')}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  // Stacked bar by group monthly
+  const GRPS=['ยาง','เครื่องยนต์','อื่นๆ','ช่วงล่าง'];
+  const GCOLS=['#E24B4A','#4C9EEB','#e39c30','#1D9E75'];
+  document.getElementById('stackLegend').innerHTML=GRPS.map((g,i)=>
+    `<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#8b949e">
+      <span style="width:9px;height:9px;border-radius:2px;background:${GCOLS[i]};flex-shrink:0"></span>${g}</span>`).join('');
+  if(charts.stack) charts.stack.destroy();
+  charts.stack=new Chart(document.getElementById('stackChart'),{type:'bar',
+    data:{labels:rows.map(r=>r.ym.slice(5)+'/'+r.ym.slice(2,4)),
+      datasets:GRPS.map((g,i)=>({label:g,data:rows.map(r=>r.g[g]||0),backgroundColor:GCOLS[i],stack:'s',borderRadius:0}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+c.raw.toLocaleString()}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:9},maxRotation:45}},
+        y:{stacked:true,ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
 }
 
 /* ── MAINTENANCE ── */
 function buildMaintenance(rows){
-  charts.pmYear=new Chart(document.getElementById('pmYearChart'),{type:'bar',data:{labels:['2024','2025','2026*'],datasets:[{label:'PM',data:[268,383,0],backgroundColor:'#1D9E75',borderRadius:4},{label:'RTF',data:[409,426,181],backgroundColor:'#E24B4A',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}}},scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>v+' รายการ'},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-
-  const yr2024=ALL_MONTHLY.filter(r=>r.ym.startsWith('2024')).reduce((s,r)=>s+r.v,0);
-  const yr2025=ALL_MONTHLY.filter(r=>r.ym.startsWith('2025')).reduce((s,r)=>s+r.v,0);
-  const yr2026=ALL_MONTHLY.filter(r=>r.ym.startsWith('2026')).reduce((s,r)=>s+r.v,0);
-  charts.yearComp=new Chart(document.getElementById('yearCompChart'),{type:'bar',data:{labels:['2024','2025','2026*\n(ม.ค.–พ.ค.)'],datasets:[{data:[yr2024,yr2025,yr2026],backgroundColor:['#378ADD','#1D9E75','#e39c30'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-
+  // PM/RTF by year grouped bar
+  const yrs=['2024','2025','2026'];
+  const yrData=yrs.map(y=>({
+    pm: rows.filter(r=>r.ym.startsWith(y)&&r.p==='PM').reduce((s,r)=>s+r.c,0)||
+        (y==='2024'?858:y==='2025'?0:0),
+    rtf: RTF_MONTHLY[y]?RTF_MONTHLY[y].c.reduce((a,b)=>a+b,0):0,
+  }));
+  // Use known counts
+  const PM_CNT={2024:491,2025:362,2026:134};
+  const RTF_CNT={2024:304,2025:357,2026:134};
+  if(charts.pmYear) charts.pmYear.destroy();
+  charts.pmYear=new Chart(document.getElementById('pmYearChart'),{type:'bar',
+    data:{labels:['2024','2025','2026 (ม.ค.–พ.ค.)'],
+      datasets:[
+        {label:'PM',data:[PM_CNT[2024],PM_CNT[2025],PM_CNT[2026]],backgroundColor:'#1D9E75',borderRadius:4},
+        {label:'RTF',data:[RTF_CNT[2024],RTF_CNT[2025],RTF_CNT[2026]],backgroundColor:'#E24B4A',borderRadius:4}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:10}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' รายการ'}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e'},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  // Year cost comparison
+  const YR_COST={2024:7079578,2025:8609804,2026:2347814};
+  if(charts.yearComp) charts.yearComp.destroy();
+  charts.yearComp=new Chart(document.getElementById('yearCompChart'),{type:'bar',
+    data:{labels:['2024','2025','2026 (ม.ค.–พ.ค.)'],
+      datasets:[{label:'ต้นทุนรวม (฿)',data:[YR_COST[2024],YR_COST[2025],YR_COST[2026]],
+        backgroundColor:['rgba(76,158,235,0.7)','rgba(226,75,74,0.7)','rgba(227,156,48,0.7)'],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'฿'+c.raw.toLocaleString()}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
   buildRtfCompare();
   buildRepeatCompare();
+}
 
-  const gr=document.getElementById('fGroup').value;
-  let subs=SUBCATS;
-  if(gr!=='all') subs=subs.filter(s=>s.group===gr);
-  charts.subCat=new Chart(document.getElementById('subCatChart'),{type:'bar',data:{labels:subs.map(s=>s.d),datasets:[{label:'มูลค่า',data:subs.map(s=>s.v),backgroundColor:subs.map(s=>COLORS[s.group]||'#8b949e'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)+' ('+subs[c.dataIndex].c+' รายการ)'}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:11}},grid:{display:false}}}}});
+/* ── RTF COMPARE ── */
+function buildRtfCompare(){
+  const baseYr=parseInt(document.getElementById('rtfBaseYear').value);
+  const cmpYr=parseInt(document.getElementById('rtfCmpYear').value);
+  const rateMap={2024:35.4,2025:41.6,2026:38.4};
+  const base=RTF_TOTAL[baseYr], cmp=RTF_TOTAL[cmpYr];
+  const factor=cmpYr===2026?12/5:1;
+  const cmpSum=Math.round(cmp.sum*factor), cmpCnt=Math.round(cmp.count*factor);
+  const diffSum=cmpSum-base.sum, diffCnt=cmpCnt-base.count;
+  const diffSumPct=((diffSum/base.sum)*100).toFixed(1);
+  const diffCntPct=((diffCnt/base.count)*100).toFixed(1);
+  const rateBase=rateMap[baseYr], rateCmp=rateMap[cmpYr];
+  const rateDiff=(rateCmp-rateBase).toFixed(1);
+  document.getElementById('rtfDiffCards').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">ยอด RTF ${baseYr}</div><div class="kpi-value" style="color:#4C9EEB">${fmt(base.sum)}</div><div class="kpi-sub">${base.count} รายการ</div></div>
+    <div class="kpi-card"><div class="kpi-label">ยอด RTF ${cmpYr}${cmpYr===2026?' (annualized)':''}</div><div class="kpi-value" style="color:${diffSum>0?'#E24B4A':'#1D9E75'}">${fmt(cmpSum)}</div><div class="kpi-sub">${cmpCnt} รายการ</div></div>
+    <div class="kpi-card"><div class="kpi-label">% เปลี่ยนแปลงมูลค่า</div><div class="kpi-value" style="color:${diffSum>0?'#E24B4A':'#1D9E75'}">${diffSum>0?'+':''}${diffSumPct}%</div><div class="kpi-sub">${diffSum>0?'เพิ่มขึ้น':'ลดลง'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">RTF Rate ${baseYr} → ${cmpYr}</div><div class="kpi-value" style="color:${rateDiff>0?'#E24B4A':'#1D9E75'}">${rateBase}% → ${rateCmp}%</div><div class="kpi-sub">${rateDiff>0?'+':''}${rateDiff}%</div></div>
+  `;
+  const MONTHS_LABEL=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const bData=RTF_MONTHLY[baseYr].c, cData=RTF_MONTHLY[cmpYr].c;
+  const bCost=RTF_MONTHLY[baseYr].v, cCost=RTF_MONTHLY[cmpYr].v;
+  document.getElementById('rtfBarTitle').textContent=`RTF รายเดือน — ${baseYr} vs ${cmpYr}`;
+  if(charts.rtfMonthly) charts.rtfMonthly.destroy();
+  charts.rtfMonthly=new Chart(document.getElementById('rtfMonthlyChart'),{type:'bar',
+    data:{labels:MONTHS_LABEL,datasets:[
+      {label:'ปี '+baseYr,data:bData,backgroundColor:'rgba(76,158,235,0.7)',borderRadius:3},
+      {label:'ปี '+cmpYr+(cmpYr===2026?' (ม.ค.–พ.ค.)':''),data:cData,backgroundColor:'rgba(226,75,74,0.7)',borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' รายการ'}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:9}}},y:{ticks:{color:'#8b949e'},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  document.getElementById('rtfCostBarTitle').textContent=`มูลค่า RTF — ${baseYr} vs ${cmpYr}`;
+  if(charts.rtfCostMonthly) charts.rtfCostMonthly.destroy();
+  charts.rtfCostMonthly=new Chart(document.getElementById('rtfCostMonthlyChart'),{type:'bar',
+    data:{labels:MONTHS_LABEL,datasets:[
+      {label:'ปี '+baseYr,data:bCost,backgroundColor:'rgba(76,158,235,0.7)',borderRadius:3},
+      {label:'ปี '+cmpYr,data:cCost,backgroundColor:'rgba(226,75,74,0.7)',borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>'฿'+c.raw.toLocaleString()}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:9}}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  // RTF by group
+  const grpKeys=Object.keys(RTF_BY_GROUP[baseYr]);
+  const grpCols={ยาง:'#E24B4A',อื่นๆ:'#e39c30',เครื่องยนต์:'#4C9EEB',ช่วงล่าง:'#1D9E75'};
+  document.getElementById('rtfGroupLegend').innerHTML=grpKeys.map(k=>
+    `<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#8b949e">
+      <span style="width:9px;height:9px;border-radius:50%;background:${grpCols[k]||'#8b949e'};flex-shrink:0"></span>${k}</span>`).join('');
+  if(charts.rtfGroup) charts.rtfGroup.destroy();
+  charts.rtfGroup=new Chart(document.getElementById('rtfGroupChart'),{type:'bar',
+    data:{labels:grpKeys,datasets:[
+      {label:'ปี '+baseYr,data:grpKeys.map(k=>RTF_BY_GROUP[baseYr][k]),backgroundColor:'rgba(76,158,235,0.7)',borderRadius:3},
+      {label:'ปี '+cmpYr,data:grpKeys.map(k=>RTF_BY_GROUP[cmpYr][k]),backgroundColor:'rgba(226,75,74,0.7)',borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>'฿'+c.raw.toLocaleString()}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  // RTF repeat top 10
+  if(charts.rtfRepeat) charts.rtfRepeat.destroy();
+  charts.rtfRepeat=new Chart(document.getElementById('rtfRepeatChart'),{type:'bar',
+    data:{labels:RTF_REPEAT.map(r=>r.id),datasets:[
+      {label:'RTF ซ้ำ (ครั้ง)',data:RTF_REPEAT.map(r=>r.count),backgroundColor:'rgba(226,75,74,0.75)',borderRadius:3}
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'RTF ซ้ำ: '+c.raw+' ครั้ง | ฿'+RTF_REPEAT[c.dataIndex].total.toLocaleString()}}},
+      scales:{x:{ticks:{color:'#8b949e'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#cdd9e5',font:{size:10}},grid:{display:false}}}}
+  });
+  document.getElementById('rtfInsightText').innerHTML=
+    `RTF ปี ${cmpYr} ${diffCnt>0?'เพิ่มขึ้น':'ลดลง'} <strong style="color:${diffCnt>0?'#E24B4A':'#1D9E75'}">${Math.abs(diffCntPct)}%</strong> เทียบปี ${baseYr} · RTF Rate ${rateBase}% → ${rateCmp}% · ยอดซ่อม RTF ${diffSum>0?'เพิ่ม':'ลด'} <strong>฿${Math.abs(diffSum).toLocaleString()}</strong>`;
+  // Sub-cat chart
+  if(charts.subCat) charts.subCat.destroy();
+  charts.subCat=new Chart(document.getElementById('subCatChart'),{type:'bar',
+    data:{labels:SUBCATS.map(s=>s.d),datasets:[
+      {label:'มูลค่า (฿)',data:SUBCATS.map(s=>s.v),backgroundColor:SUBCATS.map(s=>({ยาง:'#E24B4A',เครื่องยนต์:'#4C9EEB',ช่วงล่าง:'#1D9E75',อื่นๆ:'#e39c30'})[s.group]||'#8b949e'),borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'฿'+c.raw.toLocaleString()}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
 }
 
 /* ── COST ── */
 function buildCost(rows){
+  const total=rows.reduce((s,r)=>s+r.v,0);
+  // Pareto
   const sorted=[...SUBCATS].sort((a,b)=>b.v-a.v);
-  const grand=sorted.reduce((s,d)=>s+d.v,0);
-  let cum=0;const cumPct=[];
-  sorted.forEach(d=>{cum+=d.v;cumPct.push(Math.round(cum/grand*100));});
-  charts.pareto=new Chart(document.getElementById('paretoChart'),{type:'bar',data:{labels:sorted.map(d=>d.d),datasets:[{type:'bar',label:'มูลค่า',data:sorted.map(d=>d.v),backgroundColor:'#378ADD',borderRadius:3,yAxisID:'y'},{type:'line',label:'% สะสม',data:cumPct,borderColor:'#E24B4A',borderWidth:2,pointRadius:4,pointBackgroundColor:'#E24B4A',fill:false,yAxisID:'y2',tension:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}}},scales:{x:{ticks:{color:'#8b949e',font:{size:9},maxRotation:35},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},y2:{position:'right',min:0,max:100,ticks:{color:'#E24B4A',font:{size:9},callback:v=>v+'%'},grid:{display:false}}}}});
-
-  const grpData=[{g:'ยาง',avg:20534,c:322,color:'#378ADD'},{g:'เครื่องยนต์',avg:9810,c:641,color:'#1D9E75'},{g:'ช่วงล่าง',avg:13301,c:89,color:'#D4537E'},{g:'อื่นๆ',avg:6275,c:607,color:'#e39c30'}].sort((a,b)=>b.avg-a.avg);
-  charts.avgCost=new Chart(document.getElementById('avgCostChart'),{type:'bar',data:{labels:grpData.map(d=>d.g),datasets:[{data:grpData.map(d=>d.avg),backgroundColor:grpData.map(d=>d.color),borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'฿'+Math.round(c.raw).toLocaleString()+'/ครั้ง'}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10},callback:v=>'฿'+Math.round(v/1000)+'K'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:12}},grid:{display:false}}}}});
-
-  const m2024=ALL_MONTHLY.filter(r=>r.ym.startsWith('2024')).map(r=>r.v);
-  const m2025=ALL_MONTHLY.filter(r=>r.ym.startsWith('2025')).map(r=>r.v);
-  charts.yoy=new Chart(document.getElementById('yoyChart'),{type:'line',data:{labels:MONTHS_TH,datasets:[{label:'2024',data:m2024,borderColor:'#378ADD',borderWidth:2,pointRadius:3,fill:false,tension:0.3},{label:'2025',data:m2025,borderColor:'#1D9E75',borderWidth:2,pointRadius:3,fill:false,tension:0.3,borderDash:[5,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  let cum=0; const cumPct=sorted.map(s=>{cum+=s.v;return parseFloat((cum/18037196*100).toFixed(1));});
+  if(charts.pareto) charts.pareto.destroy();
+  charts.pareto=new Chart(document.getElementById('paretoChart'),{type:'bar',
+    data:{labels:sorted.map(s=>s.d),datasets:[
+      {label:'มูลค่า (฿)',data:sorted.map(s=>s.v),backgroundColor:'rgba(76,158,235,0.7)',borderRadius:3,yAxisID:'y'},
+      {type:'line',label:'% สะสม',data:cumPct,borderColor:'#e39c30',borderWidth:2,pointRadius:3,yAxisID:'y1',tension:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>c.datasetIndex===0?'฿'+c.raw.toLocaleString():c.raw+'%'}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:9}}},
+        y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},
+        y1:{position:'right',min:0,max:100,ticks:{color:'#e39c30',callback:v=>v+'%'},grid:{display:false}}}}
+  });
+  // Avg cost per item
+  if(charts.avgCost) charts.avgCost.destroy();
+  charts.avgCost=new Chart(document.getElementById('avgCostChart'),{type:'bar',
+    data:{labels:SUBCATS.map(s=>s.d),datasets:[{label:'เฉลี่ย/รายการ (฿)',data:SUBCATS.map(s=>Math.round(s.v/s.c)),backgroundColor:'rgba(29,158,117,0.7)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'฿'+c.raw.toLocaleString()+'/รายการ'}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:9}}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+  // YoY 2024 vs 2025
+  const m24=ALL_MONTHLY.filter(r=>r.ym.startsWith('2024')).map(r=>r.v);
+  const m25=ALL_MONTHLY.filter(r=>r.ym.startsWith('2025')).map(r=>r.v);
+  const ML=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  if(charts.yoy) charts.yoy.destroy();
+  charts.yoy=new Chart(document.getElementById('yoyChart'),{type:'line',
+    data:{labels:ML,datasets:[
+      {label:'2024',data:m24,borderColor:'#4C9EEB',tension:0.3,pointRadius:3,borderWidth:2,backgroundColor:'transparent'},
+      {label:'2025',data:m25,borderColor:'#E24B4A',tension:0.3,pointRadius:3,borderWidth:2,backgroundColor:'transparent'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:10}},tooltip:{callbacks:{label:c=>'ปี '+c.dataset.label+': ฿'+c.raw.toLocaleString()}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
 }
 
 /* ── FLEET ── */
 function buildFleet(){
   const top10=VEHICLES.slice(0,10);
-  charts.vehicle=new Chart(document.getElementById('vehicleChart'),{type:'bar',data:{labels:top10.map(v=>v.id),datasets:[{data:top10.map(v=>v.total),backgroundColor:top10.map((_,i)=>i<3?'#E24B4A':i<6?'#e39c30':'#378ADD'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtFull(c.raw)}}},scales:{x:{ticks:{color:'#8b949e',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}}}}});
-
-  const byFreq=[...VEHICLES].sort((a,b)=>b.orders-a.orders).slice(0,10);
-  charts.freq=new Chart(document.getElementById('freqChart'),{type:'bar',data:{labels:byFreq.map(v=>v.id),datasets:[{data:byFreq.map(v=>v.orders),backgroundColor:'#a78bfa',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' ครั้ง'}}},scales:{x:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{display:false}}}}});
-
+  if(charts.vehicle) charts.vehicle.destroy();
+  charts.vehicle=new Chart(document.getElementById('vehicleChart'),{type:'bar',
+    data:{labels:top10.map(v=>v.id),datasets:[{label:'ค่าซ่อมรวม (฿)',data:top10.map(v=>v.total),backgroundColor:'rgba(76,158,235,0.7)',borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'฿'+c.raw.toLocaleString()}}},
+      scales:{x:{ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#cdd9e5',font:{size:10}},grid:{display:false}}}}
+  });
+  if(charts.freq) charts.freq.destroy();
+  charts.freq=new Chart(document.getElementById('freqChart'),{type:'bar',
+    data:{labels:top10.map(v=>v.id),datasets:[{label:'จำนวนรายการ',data:top10.map(v=>v.orders),backgroundColor:'rgba(29,158,117,0.7)',borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' รายการ'}}},
+      scales:{x:{ticks:{color:'#8b949e'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#cdd9e5',font:{size:10}},grid:{display:false}}}}
+  });
+  // Risk table
   document.getElementById('vehicleTableBody').innerHTML=VEHICLES.map((v,i)=>{
-    const rl=v.total>700000?['🔴 สูงมาก','badge-red']:v.total>600000?['🟠 สูง','badge-red']:v.total>500000?['🟡 กลาง','badge-amber']:['🟢 ปกติ','badge-green'];
     const avg=Math.round(v.total/v.orders);
-    const bar=Math.min(100,Math.round(v.total/805139*100));
-    return `<tr><td class="text-center td-primary">${i+1}</td><td class="td-primary">${v.id}</td><td class="mono">${fmtFull(v.total)}</td><td class="text-center">${v.orders}</td><td class="mono">${fmtFull(avg)}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="risk-bar-wrap"><div class="risk-bar-fill" style="width:${bar}%;background:${i<3?'#E24B4A':i<5?'#e39c30':'#1D9E75'}"></div></div>${bar}%</div></td><td><span class="kpi-badge ${rl[1]}">${rl[0]}</span></td></tr>`;
+    const risk=v.total>600000?'สูงมาก':v.total>400000?'สูง':v.total>200000?'ปานกลาง':'ต่ำ';
+    const riskColor=v.total>600000?'#E24B4A':v.total>400000?'#e39c30':v.total>200000?'#4C9EEB':'#1D9E75';
+    const status=v.total>600000?'<span class="kpi-badge badge-red">⚠ ตรวจสอบเร่งด่วน</span>':
+                  v.total>400000?'<span class="kpi-badge badge-amber">⚡ ติดตาม</span>':
+                  '<span class="kpi-badge badge-green">✓ ปกติ</span>';
+    return `<tr><td>${i+1}</td><td class="td-primary">${v.id}</td>
+      <td style="text-align:right;font-weight:600">฿${v.total.toLocaleString()}</td>
+      <td style="text-align:right">${v.orders}</td>
+      <td style="text-align:right">฿${avg.toLocaleString()}</td>
+      <td style="color:${riskColor};font-weight:600">${risk}</td>
+      <td>${status}</td></tr>`;
   }).join('');
 }
 
 /* ── INSIGHT ── */
 function buildInsight(){
-  charts.saving=new Chart(document.getElementById('savingChart'),{type:'bar',data:{labels:['ปัจจุบัน\nRTF 61%','เป้าหมาย\nRTF 40%','เป้าหมาย\nRTF 30%'],datasets:[{label:'ค่าซ่อม RTF',data:[12350638,9001000,7700000],backgroundColor:'#E24B4A',stack:'s',borderRadius:0},{label:'ค่าซ่อม PM',data:[5617026,5617026,5617026],backgroundColor:'#1D9E75',stack:'s',borderRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtFull(c.raw)}}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}},y:{stacked:true,ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  if(charts.saving) charts.saving.destroy();
+  charts.saving=new Chart(document.getElementById('savingChart'),{type:'bar',
+    data:{labels:['ปัจจุบัน\nRTF 37%','เป้าหมาย\nRTF 30%','เป้าหมาย\nRTF 20%'],
+      datasets:[
+        {label:'ค่าซ่อม RTF',data:[6580875,5400000,3600000],backgroundColor:'#E24B4A',stack:'s',borderRadius:0},
+        {label:'ค่าซ่อม PM',data:[11421555,11421555,11421555],backgroundColor:'#1D9E75',stack:'s',borderRadius:0}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+c.raw.toLocaleString()}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}},
+        y:{stacked:true,ticks:{color:'#8b949e',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
 }
 
 // Init
