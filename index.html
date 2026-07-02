@@ -784,9 +784,9 @@ function setRepeatView(v){
 
 function buildRepeatMonthly(baseYr, cmpYr){
   const is2026=(cmpYr===2026);
-  const cmpMonths=is2026?5:12;
-  const baseData=RTF_REPEAT_MONTHLY[baseYr].slice(0,12);
-  const cmpData =RTF_REPEAT_MONTHLY[cmpYr].slice(0,cmpMonths);
+  const cmpMonths=is2026?6:12;
+  const baseData=RTF_REPEAT_MONTHLY[baseYr].c.slice(0,12);
+  const cmpData =RTF_REPEAT_MONTHLY[cmpYr].c.slice(0,cmpMonths);
   const labels=MONTHS_TH.slice(0,Math.max(12,cmpMonths));
 
   // % change per month (only for months both have data)
