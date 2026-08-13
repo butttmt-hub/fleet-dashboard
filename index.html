@@ -18,6 +18,19 @@
   --purple:#a78bfa; --purple-dim:rgba(167,139,250,0.15);
   --teal:#22d3ee;
 }
+
+body.light-mode {
+  --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f5;
+  --border:rgba(0,0,0,0.09); --border2:rgba(0,0,0,0.15);
+  --text:#1a2332; --text-muted:#5a6474; --text-dim:#9aa3ae;
+  --blue:#1a6bbf; --blue-dim:rgba(26,107,191,0.10);
+  --green:#0f7a5a; --green-dim:rgba(15,122,90,0.10);
+  --amber:#b57a10; --amber-dim:rgba(181,122,16,0.10);
+  --red:#c0312f; --red-dim:rgba(192,49,47,0.10);
+  --purple:#6c3fc7; --purple-dim:rgba(108,63,199,0.10);
+  --teal:#0891b2;
+}
+
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;font-size:14px;min-height:100vh;}
 
@@ -156,6 +169,12 @@ tr:hover td{background:var(--border);}
     <button class="nav-item" onclick="alert('เงินสดย่อย ปี 2026\n3,250 รายการ | 81 คัน\nม.ค. – มิ.ย. 2026')"><span class="nav-icon">📁</span>เงินสดย่อย 2026.xlsb</button>
   </div>
   <div class="sidebar-footer">
+    <button id="themeToggle" onclick="toggleTheme()"
+      style="margin-top:10px;width:100%;background:var(--surface2);border:1px solid var(--border2);
+             border-radius:6px;padding:6px 10px;color:var(--text-muted);cursor:pointer;
+             font-size:12px;display:flex;align-items:center;gap:6px;font-family:inherit;">
+      <span id="themeIcon">☀️</span><span id="themeLabel">โหมดสว่าง</span>
+    </button>
     <div style="display:flex;align-items:center;gap:6px;"><div class="dot-live"></div><span>อัปเดต: พ.ค. 2026</span></div>
     <div style="margin-top:6px;color:var(--text-dim)">1,669 รายการ · 43 คัน</div>
   </div>
@@ -1808,6 +1827,28 @@ function buildInsight(){
 
 // Init
 buildOverview(ALL_MONTHLY);
+
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light-mode');
+  document.getElementById('themeIcon').textContent  = isLight ? '🌙' : '☀️';
+  document.getElementById('themeLabel').textContent = isLight ? 'โหมดมืด' : 'โหมดสว่าง';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  // Redraw all charts to pick up new colors
+  if(typeof buildAll==='function') buildAll();
+}
+// Restore saved theme on load
+(function(){
+  if(localStorage.getItem('theme')==='light'){
+    document.body.classList.add('light-mode');
+    document.addEventListener('DOMContentLoaded',function(){
+      const icon  = document.getElementById('themeIcon');
+      const label = document.getElementById('themeLabel');
+      if(icon)  icon.textContent  = '🌙';
+      if(label) label.textContent = 'โหมดมืด';
+    });
+  }
+})();
+
 </script>
 </body>
 </html>
