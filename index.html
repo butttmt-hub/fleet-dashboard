@@ -244,7 +244,7 @@ tr:hover td{background:var(--border);}
         <div style="height:240px"><canvas id="pmYearChart"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="card-head"><div><div class="card-title">ค่าซ่อมรายปีเปรียบเทียบ</div><div class="card-sub">2024 · 2025 · 2026 (ม.ค.–พ.ค.)</div></div></div>
+        <div class="card-head"><div><div class="card-title">ค่าซ่อมรายปีเปรียบเทียบ</div><div class="card-sub">2024 · 2025 · 2026</div></div></div>
         <div style="height:240px"><canvas id="yearCompChart"></canvas></div>
       </div>
     </div>
@@ -253,8 +253,8 @@ tr:hover td{background:var(--border);}
       <span style="font-size:12px;color:var(--text-muted)">เปรียบเทียบ:</span>
       <select id="rtfBaseYear" onchange="buildRtfCompare()"><option value="2024">ปี 2024 (ฐาน)</option><option value="2025">ปี 2025 (ฐาน)</option></select>
       <span style="font-size:13px;color:var(--text-dim)">→</span>
-      <select id="rtfCmpYear" onchange="buildRtfCompare()"><option value="2025">เทียบกับปี 2025</option><option value="2026">เทียบกับปี 2026 (ม.ค.–พ.ค.)</option></select>
-      <span style="font-size:11px;color:var(--text-dim)">* 2026 ใช้เฉพาะ ม.ค.–พ.ค. (5 เดือน)</span>
+      <select id="rtfCmpYear" onchange="buildRtfCompare()"><option value="2025">เทียบกับปี 2025</option><option value="2026">เทียบกับปี 2026</option></select>
+      <span style="font-size:11px;color:var(--text-dim)">* 2026 (annualized)</span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="rtfDiffCards"></div>
     <div class="charts-row c-2 mb-20">
@@ -305,7 +305,7 @@ tr:hover td{background:var(--border);}
       <span style="font-size:16px;color:var(--text-dim)">→</span>
       <select id="repeatCmpYear" onchange="buildRepeatCompare()" style="padding:5px 12px;">
         <option value="2025">เทียบกับปี 2025</option>
-        <option value="2026">เทียบกับปี 2026 (ม.ค.–พ.ค.)</option>
+        <option value="2026">เทียบกับปี 2026</option>
       </select>
       <div style="margin-left:auto;display:flex;gap:8px;">
         <button onclick="setRepeatView('count')" id="btnCount" style="padding:5px 12px;border-radius:5px;border:1px solid var(--blue);background:var(--blue-dim);color:var(--blue);cursor:pointer;font-size:12px;font-family:'IBM Plex Sans Thai',sans-serif;">จำนวนครั้ง</button>
@@ -435,6 +435,7 @@ tr:hover td{background:var(--border);}
       <button id="pcBtn-May" class="filter-toggle" onclick="setPcMonth('May',this)">พ.ค.</button>
       <button id="pcBtn-Jun" class="filter-toggle" onclick="setPcMonth('Jun',this)">มิ.ย.</button>
       <button id="pcBtn-Jul" class="filter-toggle" onclick="setPcMonth('Jul',this)">ก.ค.</button>
+      <button id="pcBtn-Aug" class="filter-toggle" onclick="setPcMonth('Aug',this)">ส.ค.</button>
     </div>
     <!-- KPI cards -->
     <div class="kpi-grid" id="pcKpiGrid"></div>
@@ -451,7 +452,7 @@ tr:hover td{background:var(--border);}
     </div>
     <!-- Top vehicles -->
     <div class="chart-card mb-20">
-      <div class="chart-label">Top 20 รายคัน — ยอดเบิกเงินสดย่อยสะสม (ม.ค.–ก.ค. 2026)</div>
+      <div class="chart-label">Top 20 รายคัน — ยอดเบิกเงินสดย่อยสะสม (ม.ค.–ส.ค. 2026)</div>
       <div style="position:relative;height:340px"><canvas id="pcVehChart"></canvas></div>
     </div>
     <!-- Detail table -->
@@ -466,7 +467,7 @@ tr:hover td{background:var(--border);}
     </div>
 
     <!-- ค่าตำรวจ deep dive -->
-    <div class="section-header"><span class="section-tag" style="background:rgba(226,75,74,0.15);color:#E24B4A">ค่าตำรวจ</span><span class="section-title">เจาะลึกค่าตำรวจรายคัน — ม.ค.–ก.ค. 2026</span><div class="section-line"></div></div>
+    <div class="section-header"><span class="section-tag" style="background:rgba(226,75,74,0.15);color:#E24B4A">ค่าตำรวจ</span><span class="section-title">เจาะลึกค่าตำรวจรายคัน — ม.ค.–ส.ค. 2026</span><div class="section-line"></div></div>
     <!-- KPI mini -->
     <div class="kpi-grid" style="margin-bottom:16px">
       <div class="kpi-card">
@@ -626,106 +627,107 @@ const ALL_MONTHLY=[
   {ym:'2026-04',v:706352,g:{ยาง:254953,เครื่องยนต์:311904,อื่นๆ:128195,ช่วงล่าง:11300}},
   {ym:'2026-05',v:590869,g:{ยาง:185481,เครื่องยนต์:242690,อื่นๆ:161576,ช่วงล่าง:1122}},
   {ym:'2026-06',v:523558,g:{ยาง:182103,เครื่องยนต์:199100,อื่นๆ:142355,ช่วงล่าง:0}},
-];;
+  {ym:'2026-07',v:686307,g:{ยาง:220430,เครื่องยนต์:205597,อื่นๆ:195035,ช่วงล่าง:65245}},
+];;;
 
 const VEHICLES=[
-  {id:'V1-923556',total:816219,orders:67},
-  {id:'V1-962579',total:726980,orders:63},
-  {id:'V1-504109',total:712472,orders:50},
-  {id:'V1-504108',total:709665,orders:63},
-  {id:'V1-992174',total:642833,orders:53},
-  {id:'V1-514447',total:607800,orders:66},
+  {id:'V1-923556',total:836339,orders:68},
+  {id:'V1-962579',total:774630,orders:66},
+  {id:'V1-504108',total:747301,orders:65},
+  {id:'V1-504109',total:735242,orders:52},
+  {id:'V1-992174',total:684176,orders:55},
+  {id:'V1-514447',total:651016,orders:69},
+  {id:'V1-534279',total:601174,orders:45},
   {id:'V1-521049',total:589961,orders:46},
-  {id:'V1-534279',total:589574,orders:43},
-  {id:'V1-995750',total:582754,orders:33},
+  {id:'V1-995750',total:584374,orders:34},
+  {id:'V1-913191',total:559241,orders:50},
   {id:'V1-510416',total:555738,orders:50},
   {id:'V1-504110',total:552693,orders:49},
-  {id:'V1-913191',total:542631,orders:49},
-  {id:'V1-514448',total:540834,orders:50},
-  {id:'V1-996758',total:510214,orders:52},
-  {id:'V1-992172',total:507569,orders:42},
-  {id:'V1-992173',total:506184,orders:53},
-  {id:'V1-967670',total:489497,orders:43},
+  {id:'V1-992172',total:545279,orders:44},
+  {id:'V1-967670',total:544042,orders:46},
+  {id:'V1-514448',total:543334,orders:51},
+  {id:'V1-992173',total:530234,orders:55},
+  {id:'V1-996758',total:524414,orders:54},
+  {id:'V1-503172',total:512040,orders:37},
   {id:'V1-514449',total:487399,orders:52},
-  {id:'V1-534278',total:480733,orders:36},
-  {id:'V1-503172',total:471261,orders:34},
-  {id:'V1-995751',total:453545,orders:37},
-  {id:'V1-501564',total:446083,orders:43},
+  {id:'V1-534278',total:483163,orders:37},
+  {id:'V1-995751',total:465765,orders:39},
+  {id:'V1-501564',total:446410,orders:44},
+  {id:'V1-503173',total:442963,orders:36},
   {id:'V1-835391',total:441445,orders:26},
-  {id:'V1-524730',total:419078,orders:44},
-  {id:'V1-972833',total:414246,orders:49},
-  {id:'V1-504111',total:394452,orders:31},
-  {id:'V1-503174',total:388818,orders:31},
-  {id:'V1-503173',total:385843,orders:34},
-  {id:'V1-504114',total:327931,orders:31},
-  {id:'V1-939760',total:320126,orders:27},
+  {id:'V1-972833',total:428256,orders:53},
+  {id:'V1-524730',total:423178,orders:46},
+  {id:'V1-503174',total:413700,orders:33},
+  {id:'V1-504111',total:398002,orders:32},
+  {id:'V1-504114',total:380781,orders:33},
+  {id:'V1-939760',total:326227,orders:29},
+  {id:'V1-524158',total:320555,orders:40},
   {id:'V1-504112',total:319716,orders:24},
-  {id:'V1-524158',total:318905,orders:39},
   {id:'V1-504113',total:313102,orders:32},
-  {id:'V1-523526',total:284395,orders:26},
+  {id:'V1-523526',total:291835,orders:28},
   {id:'V1-016201',total:255076,orders:39},
   {id:'V1-949657',total:247820,orders:20},
-  {id:'V1-016202',total:206329,orders:42},
-  {id:'V1-511491',total:194334,orders:25},
-  {id:'V1-011720',total:179068,orders:26},
+  {id:'V1-016202',total:219329,orders:43},
+  {id:'V1-511491',total:211529,orders:27},
+  {id:'V1-545001',total:182162,orders:24},
+  {id:'V1-011720',total:179568,orders:27},
   {id:'V1-011721',total:161646,orders:26},
-  {id:'V1-551697',total:149040,orders:8},
+  {id:'V1-551697',total:154030,orders:10},
   {id:'V1-014786',total:147410,orders:32},
-  {id:'V1-545001',total:134570,orders:22},
-];;
+];;;
 
 // Priority — reclassified: เปลี่ยนยาง→PM, ปะยาง→RTF
 const PRIORITY=[
-  {p:'Preventive Maint. (PM)',v:11817493,c:894,color:'#1D9E75'},
-  {p:'Run to Failed (RTF)',v:6708495,c:814,color:'#E24B4A'},
+  {p:'Preventive Maint. (PM)',v:12240382,c:918,color:'#1D9E75'},
+  {p:'Run to Failed (RTF)',v:6971913,c:850,color:'#E24B4A'},
   {p:'Re-work',v:0,c:0,color:'#e39c30'},
-];;
+];;;
 
 const SUBCATS=[
-  {d:'ค่ายาง',v:6794348,c:334,group:'ยาง'},
-  {d:'ระบบเครื่องยนต์',v:6556137,c:665,group:'เครื่องยนต์'},
-  {d:'ระบบช่วงล่าง',v:1223757,c:89,group:'ช่วงล่าง'},
-  {d:'ระบบส่งกำลัง',v:966012,c:51,group:'อื่นๆ'},
-  {d:'อื่น ๆ อุปกรณ์เกี่ยวกับรถ',v:811395,c:156,group:'อื่นๆ'},
-  {d:'ระบบปรับอากาศ',v:802092,c:111,group:'อื่นๆ'},
-  {d:'ระบบเฮี้ยบ',v:516013,c:114,group:'อื่นๆ'},
-  {d:'ระบบไฟ',v:514920,c:135,group:'อื่นๆ'},
-  {d:'ระบบเบรค',v:341315,c:53,group:'อื่นๆ'},
-];;
+  {d:'ค่ายาง',v:7014778,c:344,group:'ยาง'},
+  {d:'ระบบเครื่องยนต์',v:6761734,c:684,group:'เครื่องยนต์'},
+  {d:'ระบบช่วงล่าง',v:1289002,c:93,group:'ช่วงล่าง'},
+  {d:'ระบบส่งกำลัง',v:980572,c:53,group:'อื่นๆ'},
+  {d:'อื่น ๆ อุปกรณ์เกี่ยวกับรถ',v:882380,c:165,group:'อื่นๆ'},
+  {d:'ระบบปรับอากาศ',v:828352,c:113,group:'อื่นๆ'},
+  {d:'ระบบไฟ',v:574260,c:143,group:'อื่นๆ'},
+  {d:'ระบบเฮี้ยบ',v:526013,c:118,group:'อื่นๆ'},
+  {d:'ระบบเบรค',v:355205,c:55,group:'อื่นๆ'},
+];;;
 
 // RTF monthly — reclassified (เปลี่ยนยาง→PM, ปะยาง→RTF)
 const RTF_MONTHLY={
   2024:{c:[28,31,22,22,29,26,19,26,15,27,28,28],v:[160366,189977,194947,131634,207803,280033,248962,225170,243920,160183,313156,255947]},
   2025:{c:[24,26,31,20,20,26,33,35,38,27,38,37],v:[248298,282367,334500,175461,90930,102339,207485,212388,306284,342230,323625,345825]},
-  2026:{c:[23,29,19,35,28,24,0,0,0,0,0,0],v:[192830,191420,123928,219407,252250,144832,0,0,0,0,0,0]},
+  2026:{c:[23,29,19,35,28,24,36,0,0,0,0,0],v:[192830,191420,123928,219407,252250,144832,263418,0,0,0,0,0]},
 };
 // RTF by group — reclassified
 const RTF_BY_GROUP={
   2024:{ยาง:169832,อื่นๆ:1358227,เครื่องยนต์:463356,ช่วงล่าง:620683},
   2025:{ยาง:241515,อื่นๆ:1550101,เครื่องยนต์:737380,ช่วงล่าง:442737},
-  2026:{ยาง:113332,อื่นๆ:750071,เครื่องยนต์:124916,ช่วงล่าง:136346},
+  2026:{ยาง:114930,อื่นๆ:945106,เครื่องยนต์:126456,ช่วงล่าง:201591},
 };
 // RTF total — reclassified
 const RTF_TOTAL={
   2024:{sum:2612098,count:301,mean:8678},
   2025:{sum:2971732,count:355,mean:8371},
-  2026:{sum:1124666,count:158,mean:7118},
+  2026:{sum:1388084,count:194,mean:7155},
 };
 // RTF repeat top 10 — reclassified
 const RTF_REPEAT=[
+  {id:'V1-962579',count:44,total:415956},
   {id:'V1-923556',count:44,total:420377},
-  {id:'V1-962579',count:41,total:368306},
-  {id:'V1-514447',count:34,total:204318},
-  {id:'V1-504108',count:33,total:285277},
+  {id:'V1-514447',count:36,total:212768},
+  {id:'V1-504108',count:34,total:288147},
+  {id:'V1-972833',count:34,total:209150},
   {id:'V1-913191',count:32,total:353735},
-  {id:'V1-972833',count:31,total:196540},
+  {id:'V1-967670',count:30,total:444766},
   {id:'V1-992174',count:30,total:287965},
-  {id:'V1-016202',count:28,total:150265},
-  {id:'V1-504109',count:27,total:310317},
-  {id:'V1-967670',count:27,total:390221},
+  {id:'V1-504109',count:29,total:333087},
+  {id:'V1-016202',count:29,total:163265},
+  {id:'V1-992173',count:28,total:167934},
   {id:'V1-514449',count:27,total:145385},
-  {id:'V1-510416',count:27,total:196878},
-];;
+];;;
 
 // RTF per vehicle per year — reclassified
 const RTF_VEH_YEAR=[
@@ -760,14 +762,14 @@ const RTF_VEH_YEAR=[
 const RTF_REPEAT_MONTHLY={
   2024:{c:[28,30,22,22,29,26,18,26,15,27,28,28],v:[160366,177537,194947,131634,207803,280033,166793,225170,243920,160183,313156,255947]},
   2025:{c:[24,26,31,20,20,26,32,35,38,27,38,37],v:[248298,282367,334500,175461,90930,102339,197955,212388,306284,342230,323625,345825]},
-  2026:{c:[23,26,19,34,28,24,0,0,0,0,0,0],v:[192830,181630,123928,208107,252250,144832,0,0,0,0,0,0]},
+  2026:{c:[23,27,19,35,28,24,32,0,0,0,0,0],v:[192830,185780,123928,219407,252250,144832,258667,0,0,0,0,0]},
 };
 
 // RTF year summary — reclassified
 const RTF_YEAR_SUMMARY={
   2024:{total_rtf:301,repeat_vehicles:40,vehicles_with_rtf:42,total_cost:2612098,avg_per_veh:7.2},
   2025:{total_rtf:355,repeat_vehicles:40,vehicles_with_rtf:41,total_cost:2971732,avg_per_veh:8.7},
-  2026:{total_rtf:158,repeat_vehicles:33,vehicles_with_rtf:37,total_cost:1124666,avg_per_veh:4.3},
+  2026:{total_rtf:194,repeat_vehicles:35,vehicles_with_rtf:41,total_cost:1388084,avg_per_veh:4.7},
 };
 
 let repeatView='count'; // 'count' or 'cost'
@@ -784,7 +786,7 @@ function setRepeatView(v){
 
 function buildRepeatMonthly(baseYr, cmpYr){
   const is2026=(cmpYr===2026);
-  const cmpMonths=is2026?6:12;
+  const cmpMonths=is2026?7:12;
   const baseData=RTF_REPEAT_MONTHLY[baseYr].c.slice(0,12);
   const cmpData =RTF_REPEAT_MONTHLY[cmpYr].c.slice(0,cmpMonths);
   const labels=MONTHS_TH.slice(0,Math.max(12,cmpMonths));
@@ -801,7 +803,7 @@ function buildRepeatMonthly(baseYr, cmpYr){
   const improved=validMonths.filter(v=>v<0).length;
   const worsened=validMonths.filter(v=>v>0).length;
   const avgPct=validMonths.length?Math.round(validMonths.reduce((s,v)=>s+v,0)/validMonths.length):0;
-  document.getElementById('repeatMonthlyTitle').textContent=`RTF ซ้ำรายเดือน — ปี ${baseYr} vs ${cmpYr}${is2026?' (2026 ม.ค.–พ.ค.)':''}`;
+  document.getElementById('repeatMonthlyTitle').textContent=`RTF ซ้ำรายเดือน — ปี ${baseYr} vs ${cmpYr}${is2026?' (2026 )':''}`;
   const badge=document.getElementById('repeatMonthlyBadge');
   if(avgPct<0){badge.className='kpi-badge badge-green';badge.textContent=`✅ เฉลี่ยลดลง ${Math.abs(avgPct)}% (${improved}/${validMonths.length} เดือน)`;}
   else{badge.className='kpi-badge badge-red';badge.textContent=`⚠ เฉลี่ยเพิ่มขึ้น ${avgPct}% (${worsened}/${validMonths.length} เดือนแย่ลง)`;}
@@ -1106,36 +1108,36 @@ function onYearChange(){
    PETTY CASH DATA (เงินสดย่อย ปี 2026)
    ══════════════════════════════ */
 const PC_CAT=[
-  {label:'ค่าทางด่วน',v:833185,color:'#4C9EEB'},
-  {label:'ค่าลงของไทวัสดุ',v:47000,color:'#1D9E75'},
-  {label:'ค่าคนงานลงสินค้า',v:32920,color:'#7B61FF'},
-  {label:'ค่าตำรวจ',v:23300,color:'#E24B4A'},
-  {label:'ค่าใช้จ่ายยานพาหนะ',v:14809,color:'#e39c30'},
-  {label:'ค่าใช้จ่ายอื่นๆ',v:4738,color:'#8b949e'},
-];;
+  {label:'ค่าทางด่วน',v:1015250,color:'#4C9EEB'},
+  {label:'ค่าลงของไทวัสดุ',v:63800,color:'#1D9E75'},
+  {label:'ค่าคนงานลงสินค้า',v:38220,color:'#7B61FF'},
+  {label:'ค่าตำรวจ',v:26400,color:'#E24B4A'},
+  {label:'ค่าใช้จ่ายยานพาหนะ',v:20709,color:'#e39c30'},
+  {label:'ค่าใช้จ่ายอื่นๆ',v:11242,color:'#8b949e'},
+];;;
 const PC_MONTH={
-  labels:['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.'],
-  values:[142937,162177,173381,149025,170545,150367,7520],
+  labels:['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.'],
+  values:[142937,162177,173381,149025,170545,150367,170994,56195],
 };
 const PC_VEH=[
-  {id:'99-6758',v:47000,drv:'นายวิทยา(ดำ)'},
-  {id:'51-4448',v:35990,drv:'นายนิพัฒน์'},
-  {id:'53-4278',v:35755,drv:'นายปิยะพงษ์'},
-  {id:'52-1049',v:34800,drv:'นายจงจิตร์'},
-  {id:'50-4109',v:33445,drv:'นายยงค์ยุทธ์'},
-  {id:'50-1564',v:32900,drv:'นายวิทยา'},
-  {id:'50-4108',v:32735,drv:'นายประมวล'},
-  {id:'96-2579',v:31050,drv:'นายไชยวัฒน์'},
-  {id:'99-2172',v:30895,drv:'นายปฎิพัทธ์'},
-  {id:'50-3172',v:30845,drv:'นายอดิศร'},
-  {id:'51-4447',v:29810,drv:'นายสัญญา'},
-  {id:'99-5750',v:29555,drv:'นายชูชาติ'},
-  {id:'53-4279',v:29155,drv:'นายชัยนรินทร์'},
-  {id:'99-2174',v:28810,drv:'นายทวี'},
-  {id:'55-1697',v:27150,drv:'นายพงษ์ศักดิ์'},
-];;
-const PC_TOTAL=955952;
-const PC_RECORDS=3356;
+  {id:'99-6758',v:56170,drv:'นายวิทยา(ดำ)'},
+  {id:'51-4448',v:44185,drv:'นายนิพัฒน์'},
+  {id:'53-4278',v:42275,drv:'นายปิยะพงษ์'},
+  {id:'52-1049',v:39605,drv:'นายจงจิตร์'},
+  {id:'50-4109',v:38670,drv:'นายยงค์ยุทธ์'},
+  {id:'50-4108',v:38295,drv:'นายประมวล'},
+  {id:'99-5750',v:37955,drv:'นายชูชาติ'},
+  {id:'50-3172',v:37670,drv:'นายอดิศร'},
+  {id:'50-1564',v:37455,drv:'นายวิทยา'},
+  {id:'51-0416',v:37220,drv:'นายผดุงศักดิ์'},
+  {id:'99-2172',v:36690,drv:'นายปฎิพัทธ์'},
+  {id:'96-2579',v:36575,drv:'นายไชยวัฒน์'},
+  {id:'99-2174',v:36565,drv:'นายทวี'},
+  {id:'51-4447',v:36560,drv:'นายสัญญา'},
+  {id:'53-4279',v:35915,drv:'นายชัยนรินทร์'},
+];;;
+const PC_TOTAL=1175621;
+const PC_RECORDS=4158;
 const PC_VEHICLES=81;
 const PC_CAT_MONTH={
   Jan:[124335,10200,5300,1000,1595,507],
@@ -1144,7 +1146,8 @@ const PC_CAT_MONTH={
   Apr:[132465,6400,4000,1500,4560,100],
   May:[140710,9600,7900,10900,1120,315],
   Jun:[134990,5000,5700,3400,917,360],
-  Jul:[5220,800,1000,0,0,500],
+  Jul:[140290,11800,5800,2600,3700,6804],
+  Aug:[46995,5800,500,500,2200,200],
 };
 const PC_VEH_MONTH={
   Jan:[
@@ -1220,16 +1223,28 @@ const PC_VEH_MONTH={
     {id:'99-5750',v:5195,drv:'นายชูชาติ'},
   ],
   Jul:[
-    {id:'51-4447',v:550,drv:'นายสัญญา'},
-    {id:'52-1049',v:520,drv:'นายจงจิตร์'},
-    {id:'TR',v:500,drv:'งานส่วนกลาง'},
-    {id:'72-1427',v:500,drv:'นายธีรพล'},
-    {id:'71-9572',v:500,drv:'นายสมคิด ฤทธิ์พรม'},
-    {id:'50-4110',v:400,drv:'นายไชยวัฒน์'},
-    {id:'52-4158',v:380,drv:'นายเอกชัย'},
-    {id:'91-3191',v:360,drv:'นายเอกรินทร์'},
-    {id:'50-3173',v:360,drv:'นายวิเชน'},
-    {id:'99-5750',v:280,drv:'นายชูชาติ'},
+    {id:'51-0416',v:9820,drv:'นายผดุงศักดิ์'},
+    {id:'99-2173',v:6845,drv:'นายวีรวัฒน์'},
+    {id:'51-4447',v:6610,drv:'นายสัญญา'},
+    {id:'99-5751',v:6475,drv:'นายธีระพงษ์'},
+    {id:'99-6758',v:6460,drv:'นายวิทยา(ดำ)'},
+    {id:'99-5750',v:6265,drv:'นายชูชาติ'},
+    {id:'51-4448',v:6075,drv:'นายนิพัฒน์'},
+    {id:'53-4279',v:6070,drv:'นายชัยนรินทร์'},
+    {id:'50-3174',v:5745,drv:'นายสายันต์'},
+    {id:'52-3526',v:5690,drv:'นายวัฒนา'},
+  ],
+  Aug:[
+    {id:'50-3172',v:2990,drv:'นายอดิศร'},
+    {id:'99-6758',v:2850,drv:'นายวิทยา(ดำ)'},
+    {id:'52-3526',v:2620,drv:'นายวัฒนา'},
+    {id:'99-2174',v:2580,drv:'นายทวี'},
+    {id:'51-4449',v:2540,drv:'นายบัญชา'},
+    {id:'99-2172',v:2530,drv:'นายปฎิพัทธ์'},
+    {id:'99-5750',v:2415,drv:'นายชูชาติ'},
+    {id:'51-4448',v:2260,drv:'นายนิพัฒน์'},
+    {id:'96-2579',v:2145,drv:'นายทินกร'},
+    {id:'50-4109',v:1860,drv:'นายยงค์ยุทธ์'},
   ],
 };
 const PC_COUNT_MONTH={
@@ -1239,38 +1254,41 @@ const PC_COUNT_MONTH={
   Apr:505,
   May:597,
   Jun:535,
-  Jul:30,
+  Jul:605,
+  Aug:227,
 };
 let pcActiveMonth='ALL';
 
 /* ── ค่าตำรวจ DATA ── */
 const POLICE_MONTH={
-  labels:['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.'],
-  values:[1000,2700,3800,1500,10900,3400,0],
+  labels:['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.'],
+  values:[1000,2700,3800,1500,10900,3400,2600,500],
 };
 const POLICE_VEH=[
-  {id:'50-3174',drv:'นายสายันต์',cnt:5,v:2200},
+  {id:'50-3174',drv:'นายสายันต์',cnt:6,v:2700},
+  {id:'91-3191',drv:'นายเอกรินทร์',cnt:5,v:1100},
   {id:'96-2579',drv:'นายทินกร',cnt:4,v:1800},
-  {id:'91-3191',drv:'นายเอกรินทร์',cnt:4,v:900},
   {id:'54-5001',drv:'นายสุกฤษฎ์',cnt:3,v:2000},
   {id:'92-3556',drv:'นายประเสริฐ',cnt:3,v:2000},
   {id:'50-4109',drv:'นายยงค์ยุทธ์',cnt:3,v:1700},
   {id:'97-2833',drv:'นายวิษณุ',cnt:3,v:1700},
   {id:'96-7670',drv:'นายกิตติพงษ์',cnt:2,v:5500},
+  {id:'50-4110',drv:'นายไชยวัฒน์',cnt:2,v:1000},
+  {id:'50-3173',drv:'นายวิเชน',cnt:2,v:1000},
+  {id:'51-4447',drv:'นายสัญญา',cnt:2,v:900},
+  {id:'50-3172',drv:'นายอดิศร',cnt:2,v:700},
   {id:'99-6758',drv:'นายวิทยา(ดำ)',cnt:2,v:300},
-  {id:'50-3172',drv:'นายอดิศร',cnt:1,v:500},
-  {id:'50-4110',drv:'นายอนุรักษ์',cnt:1,v:500},
   {id:'99-2174',drv:'นายทวี',cnt:1,v:500},
   {id:'52-4730',drv:'นายประหยัด',cnt:1,v:500},
   {id:'99-2173',drv:'นายวีรวัฒน์',cnt:1,v:500},
   {id:'72-4700',drv:'นายอาทิตย์',cnt:1,v:500},
   {id:'1ฒล-6202',drv:'นายสถิตย์',cnt:1,v:500},
   {id:'51-4449',drv:'นายบัญชา',cnt:1,v:500},
-  {id:'50-3173',drv:'นายวิเชน',cnt:1,v:500},
-  {id:'51-4447',drv:'นายสัญญา',cnt:1,v:400},
+  {id:'51-1491',drv:'นายนิวัฒน์',cnt:1,v:500},
   {id:'1ฒว-1720',drv:'นายอนาวิล',cnt:1,v:200},
+  {id:'51-0416',drv:'นายผดุงศักดิ์',cnt:1,v:200},
   {id:'1ฒล-6201',drv:'นายนฤพันธ์',cnt:1,v:100},
-];;
+];;;
 const POLICE_ROWS=[
   {d:'22/01/2026',veh:'50-3172',drv:'นายอดิศร',v:500,m:'Jan'},
   {d:'22/01/2026',veh:'50-4109',drv:'นายยงค์ยุทธ์',v:500,m:'Jan'},
@@ -1313,7 +1331,15 @@ const POLICE_ROWS=[
   {d:'26/06/2026',veh:'51-4449',drv:'นายบัญชา',v:500,m:'Jun'},
   {d:'26/06/2026',veh:'91-3191',drv:'นายเอกรินทร์',v:200,m:'Jun'},
   {d:'29/06/2026',veh:'50-3173',drv:'นายวิเชน',v:500,m:'Jun'},
-];;
+  {d:'07/07/2026',veh:'51-4447',drv:'นายสัญญา',v:500,m:'Jul'},
+  {d:'13/07/2026',veh:'91-3191',drv:'นายเอกรินทร์',v:200,m:'Jul'},
+  {d:'18/07/2026',veh:'51-0416',drv:'นายผดุงศักดิ์',v:200,m:'Jul'},
+  {d:'20/07/2026',veh:'50-3172',drv:'นายอดิศร',v:200,m:'Jul'},
+  {d:'24/07/2026',veh:'50-3174',drv:'นายสายันต์',v:500,m:'Jul'},
+  {d:'29/07/2026',veh:'51-1491',drv:'นายนิวัฒน์',v:500,m:'Jul'},
+  {d:'29/07/2026',veh:'50-3173',drv:'นายวิเชน',v:500,m:'Jul'},
+  {d:'04/08/2026',veh:'50-4110',drv:'นายไชยวัฒน์',v:500,m:'Aug'},
+];;;
 
 
 /* ── PETTY CASH ── */
@@ -1334,12 +1360,12 @@ function buildPettyCash(){
   const maxMonthVal=Math.max(...PC_MONTH.values);
   const maxMonthIdx=PC_MONTH.values.indexOf(maxMonthVal);
   document.getElementById('pcKpiGrid').innerHTML=`
-    <div class="kpi-card"><div class="kpi-label">ยอดรวม${isAll?' ม.ค.–ก.ค. 2026':' '+MLABEL[m]+' 2026'}</div>
+    <div class="kpi-card"><div class="kpi-label">ยอดรวม${isAll?' ม.ค.–ส.ค. 2026':' '+MLABEL[m]+' 2026'}</div>
       <div class="kpi-value" style="color:#4C9EEB">${fmtFull(total)}</div>
       <div class="kpi-sub">${count.toLocaleString()} รายการ${isAll?' | 81 คัน':''}</div></div>
     ${isAll?`<div class="kpi-card"><div class="kpi-label">เฉลี่ยต่อเดือน</div>
       <div class="kpi-value" style="color:#1D9E75">${fmtFull(Math.round(PC_TOTAL/6))}</div>
-      <div class="kpi-sub">7 เดือน (ม.ค.–ก.ค.)</div></div>
+      <div class="kpi-sub">8 เดือน (ม.ค.–ส.ค.)</div></div>
     <div class="kpi-card"><div class="kpi-label">เดือนสูงสุด</div>
       <div class="kpi-value" style="color:#e39c30">${PC_MONTH.labels[maxMonthIdx]}</div>
       <div class="kpi-sub">${fmtFull(maxMonthVal)} บาท</div></div>`
@@ -1409,7 +1435,7 @@ function renderPoliceTable(){
   }).join('');
 }
 function buildPoliceCharts(){
-  const CNT_BY_MONTH=[2,6,9,3,13,8,0];
+  const CNT_BY_MONTH=[2,6,9,3,13,8,7,1];
   const maxC=Math.max(...CNT_BY_MONTH);
   if(charts.policeMonth) charts.policeMonth.destroy();
   charts.policeMonth=new Chart(document.getElementById('policeMonthChart'),{type:'bar',
@@ -1441,12 +1467,12 @@ function showPage(id,btn){
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
   const titles={
-    overview:['Executive Overview','ภาพรวมการซ่อมบำรุงยานพาหนะ มกราคม 2024 – มิถุนายน 2026'],
+    overview:['Executive Overview','ภาพรวมการซ่อมบำรุงยานพาหนะ มกราคม 2024 – กรกฎาคม 2026'],
     maintenance:['Maintenance Analysis','วิเคราะห์ประสิทธิภาพการบำรุงรักษา'],
     cost:['Cost Analysis','วิเคราะห์ต้นทุนค่าซ่อมเชิงลึก'],
     fleet:['Fleet Intelligence','ข้อมูลและ Risk Ranking รายคัน'],
     insight:['Insight & Recommendations','สรุปสำหรับผู้บริหาร และแผนการปรับปรุง 90 วัน'],
-    pettycash:['Petty Cash','ค่าใช้จ่ายเงินสดย่อย มกราคม – กรกฎาคม 2026'],
+    pettycash:['Petty Cash','ค่าใช้จ่ายเงินสดย่อย มกราคม – สิงหาคม 2026'],
   };
   document.getElementById('pageTitle').textContent=titles[id][0];
   document.getElementById('pageSub').textContent=titles[id][1];
@@ -1470,7 +1496,7 @@ function rebuildActive(){
 function buildOverview(rows){
   const total=rows.reduce((s,r)=>s+r.v,0);
   const pm=PRIORITY[0], rtf=PRIORITY[1];
-  const totalAll=18525988;
+  const totalAll=19212295;
   document.getElementById('kpiGrid').innerHTML=`
     <div class="kpi-card"><div class="kpi-accent" style="background:var(--blue)"></div>
       <div class="kpi-label"><span class="kpi-icon">🚛</span>รถทั้งหมด</div>
@@ -1574,11 +1600,11 @@ function buildMaintenance(rows){
     rtf: RTF_MONTHLY[y]?RTF_MONTHLY[y].c.reduce((a,b)=>a+b,0):0,
   }));
   // Use known counts
-  const PM_CNT={2024:374,2025:344,2026:176};
-  const RTF_CNT={2024:301,2025:355,2026:158};
+  const PM_CNT={2024:374,2025:344,2026:200};
+  const RTF_CNT={2024:301,2025:355,2026:194};
   if(charts.pmYear) charts.pmYear.destroy();
   charts.pmYear=new Chart(document.getElementById('pmYearChart'),{type:'bar',
-    data:{labels:['2024','2025','2026 (ม.ค.–พ.ค.)'],
+    data:{labels:['2024','2025','2026'],
       datasets:[
         {label:'PM',data:[PM_CNT[2024],PM_CNT[2025],PM_CNT[2026]],backgroundColor:'#1D9E75',borderRadius:4},
         {label:'RTF',data:[RTF_CNT[2024],RTF_CNT[2025],RTF_CNT[2026]],backgroundColor:'#E24B4A',borderRadius:4}
@@ -1589,10 +1615,10 @@ function buildMaintenance(rows){
       scales:{x:{grid:{display:false},ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e'},grid:{color:'rgba(255,255,255,0.05)'}}}}
   });
   // Year cost comparison
-  const YR_COST={2024:7581671,2025:7307132,2026:3637185};
+  const YR_COST={2024:7581671,2025:7307132,2026:4323492};
   if(charts.yearComp) charts.yearComp.destroy();
   charts.yearComp=new Chart(document.getElementById('yearCompChart'),{type:'bar',
-    data:{labels:['2024','2025','2026 (ม.ค.–พ.ค.)'],
+    data:{labels:['2024','2025','2026'],
       datasets:[{label:'ต้นทุนรวม (฿)',data:[YR_COST[2024],YR_COST[2025],YR_COST[2026]],
         backgroundColor:['rgba(76,158,235,0.7)','rgba(226,75,74,0.7)','rgba(227,156,48,0.7)'],borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
@@ -1607,7 +1633,7 @@ function buildMaintenance(rows){
 function buildRtfCompare(){
   const baseYr=parseInt(document.getElementById('rtfBaseYear').value);
   const cmpYr=parseInt(document.getElementById('rtfCmpYear').value);
-  const rateMap={2024:44.6,2025:50.8,2026:47.3};
+  const rateMap={2024:44.6,2025:50.8,2026:49.2};
   const base=RTF_TOTAL[baseYr], cmp=RTF_TOTAL[cmpYr];
   const factor=cmpYr===2026?12/5:1;
   const cmpSum=Math.round(cmp.sum*factor), cmpCnt=Math.round(cmp.count*factor);
@@ -1630,7 +1656,7 @@ function buildRtfCompare(){
   charts.rtfMonthly=new Chart(document.getElementById('rtfMonthlyChart'),{type:'bar',
     data:{labels:MONTHS_LABEL,datasets:[
       {label:'ปี '+baseYr,data:bData,backgroundColor:'rgba(76,158,235,0.7)',borderRadius:3},
-      {label:'ปี '+cmpYr+(cmpYr===2026?' (ม.ค.–พ.ค.)':''),data:cData,backgroundColor:'rgba(226,75,74,0.7)',borderRadius:3}
+      {label:'ปี '+cmpYr+(cmpYr===2026?' ()':''),data:cData,backgroundColor:'rgba(226,75,74,0.7)',borderRadius:3}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:'#8b949e',font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' รายการ'}}},
